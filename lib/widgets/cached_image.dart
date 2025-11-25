@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 class CachedImage extends StatelessWidget {
   final String imageUrl;
@@ -11,7 +12,7 @@ class CachedImage extends StatelessWidget {
   final Widget? errorWidget;
 
   const CachedImage({
-    Key? key,
+    super.key,
     required this.imageUrl,
     this.fit = BoxFit.cover,
     this.width,
@@ -19,10 +20,12 @@ class CachedImage extends StatelessWidget {
     this.borderRadius,
     this.placeholder,
     this.errorWidget,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return ClipRRect(
       borderRadius: borderRadius ?? BorderRadius.zero,
       child: CachedNetworkImage(
@@ -30,39 +33,49 @@ class CachedImage extends StatelessWidget {
         width: width,
         height: height,
         fit: fit,
-        placeholder: (context, url) =>
-        placeholder ??
-            Container(
-              color: Theme.of(context).cardColor,
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: Theme.of(context).colorScheme.primary,
-                  strokeWidth: 2,
-                ),
-              ),
+        placeholder: (context, url) => placeholder ?? _buildShimmerPlaceholder(isDark),
+        errorWidget: (context, url, error) => errorWidget ?? _buildErrorWidget(context),
+      ),
+    );
+  }
+
+  Widget _buildShimmerPlaceholder(bool isDark) {
+    return Shimmer.fromColors(
+      baseColor: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E0E0),
+      highlightColor: isDark ? const Color(0xFF3A3A3A) : const Color(0xFFF5F5F5),
+      period: const Duration(milliseconds: 1500),
+      child: Container(
+        width: width,
+        height: height,
+        decoration: BoxDecoration(
+          color: isDark ? const Color(0xFF2A2A2A) : const Color(0xFFE0E0E0),
+          borderRadius: borderRadius ?? BorderRadius.zero,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorWidget(BuildContext context) {
+    return Container(
+      width: width,
+      height: height,
+      color: Theme.of(context).cardColor,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.movie_outlined,
+            size: 40,
+            color: Theme.of(context).iconTheme.color?.withOpacity(0.3),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'No Image',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5),
             ),
-        errorWidget: (context, url, error) =>
-        errorWidget ??
-            Container(
-              color: Theme.of(context).cardColor,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.movie_outlined,
-                    size: 40,
-                    color: Theme.of(context).iconTheme.color?.withOpacity(0.5),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'No Image',
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-            ),
-        fadeInDuration: const Duration(milliseconds: 300),
-        fadeOutDuration: const Duration(milliseconds: 100),
+          ),
+        ],
       ),
     );
   }

@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import '../core/constants/movie_images.dart';
+import '../core/routes/app_routes.dart';
 
 class HomeController extends GetxController {
   final RxList<Map<String, dynamic>> featuredMovies = <Map<String, dynamic>>[].obs;
@@ -34,7 +35,7 @@ class HomeController extends GetxController {
   }
 
   void onMovieTapped(Map<String, dynamic> movie) {
-    // Navigate to movie detail page
-    print('Movie tapped: ${movie['title']}');
+    Get.toNamed(AppRoutes.videoPlayer, arguments: {'movie': movie});
   }
+
 }

@@ -1,5 +1,4 @@
 class MovieImages {
-  // TMDB Image Base URL
   static const String tmdbImageBaseUrl = 'https://image.tmdb.org/t/p/w500';
   static const String tmdbOriginalImageBaseUrl = 'https://image.tmdb.org/t/p/original';
 
@@ -75,6 +74,90 @@ class MovieImages {
       'title': 'Spider-Man: Across',
       'poster': 'https://image.tmdb.org/t/p/w500/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg',
       'rating': 8.9,
+      'year': 2023,
+    },
+    {
+      'id': 'trending_1',
+      'title': 'Avatar: The Way of Water',
+      'poster': 'https://image.tmdb.org/t/p/w500/t6HIqrRAclMCA60NsSmeqe9RmNV.jpg',
+      'rating': 8.2,
+      'year': 2022,
+    },
+    {
+      'id': 'trending_2',
+      'title': 'Barbie',
+      'poster': 'https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg',
+      'rating': 7.8,
+      'year': 2023,
+    },
+    {
+      'id': 'trending_3',
+      'title': 'Guardians of the Galaxy Vol. 3',
+      'poster': 'https://image.tmdb.org/t/p/w500/r2J02Z2OpNTctfOSN1Ydgii51I3.jpg',
+      'rating': 8.1,
+      'year': 2023,
+    },
+    {
+      'id': 'trending_4',
+      'title': 'Fast X',
+      'poster': 'https://image.tmdb.org/t/p/w500/fiVW06jE7z9YnO4trhaMEdclSiC.jpg',
+      'rating': 7.3,
+      'year': 2023,
+    },
+    {
+      'id': 'trending_5',
+      'title': 'Mission: Impossible',
+      'poster': 'https://image.tmdb.org/t/p/w500/NNxYkU70HPurnNCSiCjYAmacwm.jpg',
+      'rating': 8.0,
+      'year': 2023,
+    },
+    {
+      'id': 'trending_6',
+      'title': 'Elemental',
+      'poster': 'https://image.tmdb.org/t/p/w500/4Y1WNkd88JXmGfhtWR7dmDAo1T2.jpg',
+      'rating': 7.7,
+      'year': 2023,
+    },
+    {
+      'id': 'trending_1',
+      'title': 'Avatar: The Way of Water',
+      'poster': 'https://image.tmdb.org/t/p/w500/t6HIqrRAclMCA60NsSmeqe9RmNV.jpg',
+      'rating': 8.2,
+      'year': 2022,
+    },
+    {
+      'id': 'trending_2',
+      'title': 'Barbie',
+      'poster': 'https://image.tmdb.org/t/p/w500/iuFNMS8U5cb6xfzi51Dbkovj7vM.jpg',
+      'rating': 7.8,
+      'year': 2023,
+    },
+    {
+      'id': 'trending_3',
+      'title': 'Guardians of the Galaxy Vol. 3',
+      'poster': 'https://image.tmdb.org/t/p/w500/r2J02Z2OpNTctfOSN1Ydgii51I3.jpg',
+      'rating': 8.1,
+      'year': 2023,
+    },
+    {
+      'id': 'trending_4',
+      'title': 'Fast X',
+      'poster': 'https://image.tmdb.org/t/p/w500/fiVW06jE7z9YnO4trhaMEdclSiC.jpg',
+      'rating': 7.3,
+      'year': 2023,
+    },
+    {
+      'id': 'trending_5',
+      'title': 'Mission: Impossible',
+      'poster': 'https://image.tmdb.org/t/p/w500/NNxYkU70HPurnNCSiCjYAmacwm.jpg',
+      'rating': 8.0,
+      'year': 2023,
+    },
+    {
+      'id': 'trending_6',
+      'title': 'Elemental',
+      'poster': 'https://image.tmdb.org/t/p/w500/4Y1WNkd88JXmGfhtWR7dmDAo1T2.jpg',
+      'rating': 7.7,
       'year': 2023,
     },
   ];

@@ -15,10 +15,10 @@ class AdultContentPage extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenWidth = MediaQuery.of(context).size.width;
 
-    // Calculate card width to show 3.5 movies
     final cardWidth = (screenWidth - 40) / 3.5;
     final cardHeight = cardWidth * 1.5;
-    final totalSectionHeight = cardHeight + 50;
+    final titleHeight = 28.0;
+    final totalSectionHeight = cardHeight + titleHeight + 30;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
@@ -46,10 +46,8 @@ class AdultContentPage extends StatelessWidget {
             return CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
-                // Header
                 _buildHeader(context, isDark),
 
-                // Adult Series
                 _buildMovieSection(
                   context,
                   title: 'Adult Series',
@@ -60,7 +58,6 @@ class AdultContentPage extends StatelessWidget {
                   sectionHeight: totalSectionHeight,
                 ),
 
-                // Adult Movies
                 _buildMovieSection(
                   context,
                   title: 'Adult Movies',
@@ -71,7 +68,6 @@ class AdultContentPage extends StatelessWidget {
                   sectionHeight: totalSectionHeight,
                 ),
 
-                // Popular
                 _buildMovieSection(
                   context,
                   title: 'Popular',
@@ -83,7 +79,6 @@ class AdultContentPage extends StatelessWidget {
                   sectionHeight: totalSectionHeight,
                 ),
 
-                // New Releases
                 _buildMovieSection(
                   context,
                   title: 'New Releases',
@@ -108,81 +103,66 @@ class AdultContentPage extends StatelessWidget {
       floating: true,
       snap: true,
       elevation: 0,
-      backgroundColor: Colors.transparent,
-      toolbarHeight: 50,
-      flexibleSpace: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: isDark
-                ? [AppColors.darkBackground, AppColors.darkBackground.withOpacity(0.95)]
-                : [AppColors.lightBackground, AppColors.lightBackground.withOpacity(0.95)],
+      backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+      toolbarHeight: 60,
+      title: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              gradient: AppColors.getPrimaryGradient(context),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.eighteen_up_rating_rounded, color: Colors.white, size: 20),
           ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  gradient: AppColors.getPrimaryGradient(context),
-                  borderRadius: BorderRadius.circular(8),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  '18+ Content',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
-                child: const Icon(Icons.eighteen_up_rating_rounded, color: Colors.white, size: 18),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '18+ Content',
-                      style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    Text(
-                      'Mature content',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontSize: 9,
-                        color: Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.6),
-                      ),
-                    ),
-                  ],
+                Text(
+                  'Mature content',
+                  style: Theme.of(context).textTheme.bodySmall,
                 ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: AppColors.error.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: AppColors.error, width: 1),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.warning_rounded, color: AppColors.error, size: 12),
-                    const SizedBox(width: 4),
-                    Text(
-                      '18+',
-                      style: TextStyle(
-                        color: AppColors.error,
-                        fontSize: 10,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+            decoration: BoxDecoration(
+              color: AppColors.error.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.error, width: 1),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.warning_rounded, color: AppColors.error, size: 14),
+                const SizedBox(width: 4),
+                Text(
+                  '18+',
+                  style: TextStyle(
+                    color: AppColors.error,
+                    fontSize: 11,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 
+  // UPDATED: Copied exact title row from home page
   Widget _buildMovieSection(
       BuildContext context, {
         required String title,
@@ -198,21 +178,11 @@ class AdultContentPage extends StatelessWidget {
         height: sectionHeight,
         child: Column(
           children: [
+            // COPIED FROM HOME PAGE - Exact same title row
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
               child: Row(
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(5),
-                    decoration: BoxDecoration(
-                      gradient: showFire
-                          ? AppColors.getTrendingGradient(context)
-                          : AppColors.getPrimaryGradient(context),
-                      borderRadius: BorderRadius.circular(7),
-                    ),
-                    child: Icon(icon, size: 13, color: Colors.white),
-                  ),
-                  const SizedBox(width: 8),
                   Expanded(
                     child: Text(
                       title,
@@ -227,16 +197,18 @@ class AdultContentPage extends StatelessWidget {
                       AppRoutes.seeAll,
                       arguments: {'title': title, 'movies': movies},
                     ),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-                      decoration: BoxDecoration(
-                        gradient: AppColors.getPrimaryGradient(context),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: const Text(
-                        'All',
-                        style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w600),
-                      ),
+                    child: Row(
+                      spacing: 5,
+                      children: [
+                        Text(
+                          'See All',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
+                          ),
+                        ),
+                        Icon(Icons.arrow_forward_ios, size: 10),
+                      ],
                     ),
                   ),
                 ],
@@ -257,6 +229,7 @@ class AdultContentPage extends StatelessWidget {
                         movie: movies[index],
                         onTap: () => controller.onContentTapped(movies[index]),
                         index: index,
+                        width: cardWidth,
                       ),
                     ),
                   );
@@ -319,13 +292,13 @@ class AdultContentPage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(30),
                   boxShadow: [
                     BoxShadow(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.4),
+                      color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
                   ],
                 ),
-                child: Text(
+                child: const Text(
                   'I am 18 or older',
                   style: TextStyle(
                     color: Colors.white,

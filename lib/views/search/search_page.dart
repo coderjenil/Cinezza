@@ -14,104 +14,85 @@ class SearchPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final crossAxisCount = screenWidth > 900 ? 5 : screenWidth > 600 ? 4 : 3;
+    final cardWidth = (screenWidth - (20 * 2) - (10 * (crossAxisCount - 1))) / crossAxisCount;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+      appBar: AppBar(
+        backgroundColor: isDark ? AppColors.darkSurface : AppColors.lightSurface,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).iconTheme.color),
+          onPressed: () => Get.back(),
+        ),
+        title: Container(
+          height: 45,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkCardBackground : AppColors.lightBackground,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: TextField(
+            controller: textController,
+            autofocus: true,
+            onChanged: controller.onSearchChanged,
+            style: Theme.of(context).textTheme.bodyLarge,
+            decoration: InputDecoration(
+              hintText: 'Search movies...',
+              hintStyle: Theme.of(context).textTheme.bodyMedium,
+              border: InputBorder.none,
+              icon: Icon(Icons.search_rounded, color: Theme.of(context).colorScheme.primary),
+              suffixIcon: Obx(() => controller.searchQuery.value.isNotEmpty
+                  ? IconButton(
+                icon: const Icon(Icons.clear_rounded),
+                onPressed: () {
+                  textController.clear();
+                  controller.onSearchChanged('');
+                },
+              )
+                  : const SizedBox.shrink()),
+            ),
+          ),
+        ),
+      ),
       body: Container(
         decoration: BoxDecoration(
           gradient: isDark ? AppColors.darkBackgroundGradient : AppColors.lightBackgroundGradient,
         ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Search Header
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.arrow_back_rounded, color: Theme.of(context).iconTheme.color),
-                      onPressed: () => Get.back(),
-                    ),
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        decoration: BoxDecoration(
-                          color: isDark ? AppColors.darkCardBackground : AppColors.lightBackground,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: TextField(
-                          controller: textController,
-                          autofocus: true,
-                          onChanged: controller.onSearchChanged,
-                          style: Theme.of(context).textTheme.bodyLarge,
-                          decoration: InputDecoration(
-                            hintText: 'Search movies...',
-                            hintStyle: Theme.of(context).textTheme.bodyMedium,
-                            border: InputBorder.none,
-                            icon: Icon(Icons.search_rounded, color: Theme.of(context).colorScheme.primary),
-                            suffixIcon: Obx(() => controller.searchQuery.value.isNotEmpty
-                                ? IconButton(
-                              icon: const Icon(Icons.clear_rounded),
-                              onPressed: () {
-                                textController.clear();
-                                controller.onSearchChanged('');
-                              },
-                            )
-                                : const SizedBox.shrink()),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+        child: Obx(() {
+          if (controller.searchQuery.value.isEmpty) {
+            return _buildEmptyState(context, 'Start searching for movies', Icons.search_rounded);
+          }
 
-              // Results
-              Expanded(
-                child: Obx(() {
-                  if (controller.searchQuery.value.isEmpty) {
-                    return _buildEmptyState(context, 'Start searching for movies', Icons.search_rounded);
-                  }
+          if (controller.isSearching.value) {
+            return Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary));
+          }
 
-                  if (controller.isSearching.value) {
-                    return Center(child: CircularProgressIndicator(color: Theme.of(context).colorScheme.primary));
-                  }
+          if (controller.searchResults.isEmpty) {
+            return _buildEmptyState(context, 'No results found', Icons.search_off_rounded);
+          }
 
-                  if (controller.searchResults.isEmpty) {
-                    return _buildEmptyState(context, 'No results found', Icons.search_off_rounded);
-                  }
-
-                  return GridView.builder(
-                    padding: const EdgeInsets.all(16),
-                    physics: const BouncingScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: crossAxisCount,
-                      childAspectRatio: 0.65,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 14,
-                    ),
-                    itemCount: controller.searchResults.length,
-                    itemBuilder: (context, index) {
-                      return MovieCard(movie: controller.searchResults[index], onTap: () {}, index: index);
-                    },
-                  );
-                }),
-              ),
-            ],
-          ),
-        ),
+          return GridView.builder(
+            padding: const EdgeInsets.all(20),
+            physics: const BouncingScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: crossAxisCount,
+              childAspectRatio: 2 / 3.3,
+              crossAxisSpacing: 10,
+              mainAxisSpacing: 14,
+            ),
+            itemCount: controller.searchResults.length,
+            itemBuilder: (context, index) {
+              return MovieCard(
+                movie: controller.searchResults[index],
+                onTap: () {},
+                index: index,
+                width: cardWidth,
+              );
+            },
+          );
+        }),
       ),
     );
   }
