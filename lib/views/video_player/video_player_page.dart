@@ -8,6 +8,7 @@ import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../controllers/video_player_controller.dart';
 import '../../core/theme/app_colors.dart';
+import '../../services/volume_service.dart';
 import '../../widgets/movie_card.dart';
 
 class VideoPlayerPage extends StatefulWidget {
@@ -24,7 +25,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   bool _isLocked = false;
   bool _isFullscreen = false;
   double _brightness = 0.5;
-  double _volume = 0.5;
+  double _volume = 0.5; // 0.0 to 1.0 (0% to 200%)
   bool _isDraggingBrightness = false;
   bool _isDraggingVolume = false;
   double _swipeStartPosition = 0;
@@ -35,27 +36,26 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void initState() {
     super.initState();
     _initializePlayer();
-    _setupVolumeListener();
-    WakelockPlus.enable();
-    // Allow both portrait orientations for normal view
+    _hideSystemVolumeUI();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
+    WakelockPlus.enable();
   }
+
+  void _hideSystemVolumeUI() async {
+    FlutterVolumeController.showSystemUI = false;
+
+    // Hide Android native system volume UI
+    await VolumeService.hideSystemVolumeUI();
+  }
+
 
   void _initializePlayer() async {
     await controller.initializeVideo();
     _getBrightness();
-    _getVolume();
-  }
-
-  void _setupVolumeListener() {
-    FlutterVolumeController.addListener((volume) {
-      if (!_isDraggingVolume && mounted) {
-        setState(() => _volume = volume);
-      }
-    });
+    _getInitialVolume();
   }
 
   void _getBrightness() async {
@@ -67,9 +67,15 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     }
   }
 
-  void _getVolume() async {
-    final volume = await FlutterVolumeController.getVolume();
-    if (mounted) setState(() => _volume = volume ?? 0.5);
+  void _getInitialVolume() async {
+    final systemVolume = await FlutterVolumeController.getVolume();
+    if (mounted) {
+      setState(() {
+        // Start at 50% (which is 100% system volume)
+        _volume = 0.5;
+      });
+      _applyVolume();
+    }
   }
 
   void _setBrightness(double brightness) async {
@@ -81,23 +87,42 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     }
   }
 
-  void _setVolume(double volume) {
-    FlutterVolumeController.setVolume(volume);
-    setState(() => _volume = volume);
+  void _applyVolume() {
+    // _volume ranges from 0.0 to 1.0
+    // 0.0 = 0%, 0.5 = 100%, 1.0 = 200%
+
+    double systemVolume;
+    double audioBoost;
+
+    if (_volume <= 0.5) {
+      // 0-100%: Adjust system volume from 0 to 1
+      systemVolume = _volume * 2; // 0-0.5 → 0-1
+      audioBoost = 1.0;
+    } else {
+      // 100-200%: System volume at max, boost audio
+      systemVolume = 1.0;
+      audioBoost = (_volume - 0.5) * 2 + 1.0; // 0.5-1.0 → 1.0-2.0
+    }
+
+    // Apply system volume
+    FlutterVolumeController.setVolume(systemVolume);
+
+    // Apply audio boost to video player
+    if (controller.videoController != null && controller.videoController!.value.isInitialized) {
+      controller.videoController!.setVolume(audioBoost);
+    }
   }
 
   void _toggleFullscreen() {
     setState(() => _isFullscreen = !_isFullscreen);
 
     if (_isFullscreen) {
-      // Enter fullscreen - landscape mode (left and right)
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.landscapeLeft,
         DeviceOrientation.landscapeRight,
       ]);
       SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     } else {
-      // Exit fullscreen - portrait mode (up and down)
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.portraitUp,
         DeviceOrientation.portraitDown,
@@ -126,17 +151,16 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   Future<bool> _onWillPop() async {
     if (_isFullscreen) {
       _toggleFullscreen();
-      return false; // Don't exit the page
+      return false;
     }
-    return true; // Exit the page
+    return true;
   }
 
   @override
   void dispose() {
     _hideControlsTimer?.cancel();
-    FlutterVolumeController.removeListener();
+    FlutterVolumeController.showSystemUI = true;
     WakelockPlus.disable();
-    // Reset to all orientations on dispose
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
@@ -166,7 +190,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       body: SafeArea(
         child: Column(
           children: [
-            // Video Player Section
             Obx(() {
               if (!controller.isInitialized.value) {
                 return AspectRatio(
@@ -176,11 +199,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                   ),
                 );
               }
-
               return _buildVideoPlayer();
             }),
-
-            // Similar Movies Section
             Expanded(
               child: Container(
                 color: isDark ? AppColors.darkBackground : AppColors.lightBackground,
@@ -236,10 +256,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             child: CircularProgressIndicator(color: AppColors.primary),
           );
         }
-
-        return Center(
-          child: _buildVideoPlayer(),
-        );
+        return Center(child: _buildVideoPlayer());
       }),
     );
   }
@@ -267,15 +284,11 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               fit: StackFit.expand,
               children: [
                 VideoPlayer(controller.videoController!),
-
                 if (_isDraggingBrightness) _buildBrightnessIndicator(),
                 if (_isDraggingVolume) _buildVolumeIndicator(),
                 if (_isSwiping) _buildSeekIndicator(),
-
                 if (_showControls && !_isLocked) _buildControlsOverlay(),
-
                 if (_showControls || _isLocked) _buildLockButton(),
-
                 if (controller.isBuffering.value)
                   Center(child: CircularProgressIndicator(color: Colors.white)),
               ],
@@ -340,7 +353,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           ),
           Expanded(
             child: Obx(() => Text(
-              controller.currentMovie.value['title'] ?? 'Video Player',
+              controller.currentMovie.value['title'] ?? 'Movie',
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 16,
@@ -376,6 +389,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   }
 
   Widget _buildBottomControls() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Column(
@@ -392,6 +407,16 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                     trackHeight: 3,
                     thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
                     overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                    activeTrackColor: isDark
+                        ? AppColors.primary
+                        : Theme.of(context).colorScheme.primary,
+                    inactiveTrackColor: Colors.white.withOpacity(0.3),
+                    thumbColor: isDark
+                        ? AppColors.primary
+                        : Theme.of(context).colorScheme.primary,
+                    overlayColor: (isDark
+                        ? AppColors.primary
+                        : Theme.of(context).colorScheme.primary).withOpacity(0.3),
                   ),
                   child: Slider(
                     value: position.inMilliseconds.toDouble(),
@@ -400,8 +425,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                     onChanged: (value) {
                       controller.seekTo(Duration(milliseconds: value.toInt()));
                     },
-                    activeColor: AppColors.primary,
-                    inactiveColor: Colors.white30,
                   ),
                 ),
                 Padding(
@@ -477,6 +500,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   }
 
   Widget _buildVolumeIndicator() {
+    // Calculate percentage (0-200%)
+    final percentage = (_volume * 200).toInt();
+    final isBoost = _volume > 0.5;
+
     return Container(
       alignment: Alignment.center,
       color: Colors.black45,
@@ -484,15 +511,34 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            _volume > 0.5 ? Icons.volume_up_rounded : _volume > 0 ? Icons.volume_down_rounded : Icons.volume_off_rounded,
-            color: Colors.white,
+            _volume > 0.5
+                ? Icons.volume_up_rounded
+                : _volume > 0
+                ? Icons.volume_down_rounded
+                : Icons.volume_off_rounded,
+            color: isBoost ? Colors.orange : Colors.white,
             size: 40,
           ),
           const SizedBox(height: 8),
           Text(
-            '${(_volume * 100).toInt()}%',
-            style: const TextStyle(color: Colors.white, fontSize: 16),
+            '$percentage%',
+            style: TextStyle(
+              color: isBoost ? Colors.orange : Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
+          if (isBoost)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text(
+                'Audio Boost',
+                style: TextStyle(
+                  color: Colors.orange.shade300,
+                  fontSize: 12,
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -545,17 +591,20 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     final dy = details.primaryDelta ?? 0;
 
     if (dx < width / 2) {
+      // Left side - Brightness control
       setState(() {
         _isDraggingBrightness = true;
         _brightness = (_brightness - (dy / 500)).clamp(0.0, 1.0);
       });
       _setBrightness(_brightness);
     } else {
+      // Right side - Volume control (0-200%)
       setState(() {
         _isDraggingVolume = true;
+        // Smooth continuous swipe: bottom to top = 0% to 200%
         _volume = (_volume - (dy / 500)).clamp(0.0, 1.0);
       });
-      _setVolume(_volume);
+      _applyVolume();
     }
   }
 
