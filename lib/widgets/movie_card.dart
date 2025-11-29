@@ -1,29 +1,33 @@
+import 'package:app/views/video_player/video_player_page.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'dart:ui';
+import '../models/movies_model.dart';
 import 'cached_image.dart';
 import '../core/theme/app_colors.dart';
 
 class MovieCard extends StatefulWidget {
-  final Map<String, dynamic> movie;
+  final Movie movie;
   final VoidCallback onTap;
   final double? width;
   final double? height;
   final int index;
 
   const MovieCard({
-    Key? key,
+    super.key,
     required this.movie,
     required this.onTap,
     this.width,
     this.height,
     this.index = 0,
-  }) : super(key: key);
+  });
 
   @override
   State<MovieCard> createState() => _MovieCardState();
 }
 
-class _MovieCardState extends State<MovieCard> with SingleTickerProviderStateMixin {
+class _MovieCardState extends State<MovieCard>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _fadeAnimation;
@@ -34,26 +38,28 @@ class _MovieCardState extends State<MovieCard> with SingleTickerProviderStateMix
     super.initState();
 
     _controller = AnimationController(
-      duration: Duration(milliseconds: 400 + (widget.index * 50)),
+      duration: Duration(milliseconds: 350 + (widget.index * 40)),
       vsync: this,
     );
 
-    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 0.85,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeIn),
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.65, curve: Curves.easeIn),
+      ),
     );
 
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.3, 0),
+      begin: const Offset(0.2, 0),
       end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic),
-    );
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
 
-    Future.delayed(Duration(milliseconds: widget.index * 60), () {
+    Future.delayed(Duration(milliseconds: widget.index * 50), () {
       if (mounted) _controller.forward();
     });
   }
@@ -75,14 +81,17 @@ class _MovieCardState extends State<MovieCard> with SingleTickerProviderStateMix
         child: ScaleTransition(
           scale: _scaleAnimation,
           child: GestureDetector(
-            onTap: widget.onTap,
+            onTap: () {
+              Get.to(
+                () => VideoPlayerPage(videoUrl: widget.movie.videoUrl ?? ''),
+              );
+            },
             child: SizedBox(
               width: widget.width,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Poster Container with FIXED 2:3 aspect ratio (NO HERO)
                   Flexible(
                     child: AspectRatio(
                       aspectRatio: 2 / 3,
@@ -91,7 +100,9 @@ class _MovieCardState extends State<MovieCard> with SingleTickerProviderStateMix
                           borderRadius: BorderRadius.circular(10),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(isDark ? 0.4 : 0.15),
+                              color: Colors.black.withOpacity(
+                                isDark ? 0.4 : 0.15,
+                              ),
                               blurRadius: 8,
                               offset: const Offset(0, 3),
                             ),
@@ -103,7 +114,7 @@ class _MovieCardState extends State<MovieCard> with SingleTickerProviderStateMix
                             fit: StackFit.expand,
                             children: [
                               CachedImage(
-                                imageUrl: widget.movie['poster'] ?? '',
+                                imageUrl: widget.movie.thumbUrl ?? '',
                                 fit: BoxFit.cover,
                               ),
                               Positioned(
@@ -130,11 +141,15 @@ class _MovieCardState extends State<MovieCard> with SingleTickerProviderStateMix
                                 child: Container(
                                   padding: const EdgeInsets.all(4),
                                   decoration: BoxDecoration(
-                                    gradient: AppColors.getPrimaryGradient(context),
+                                    gradient: AppColors.getPrimaryGradient(
+                                      context,
+                                    ),
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary.withOpacity(0.4),
                                         blurRadius: 6,
                                         offset: const Offset(0, 2),
                                       ),
@@ -153,23 +168,20 @@ class _MovieCardState extends State<MovieCard> with SingleTickerProviderStateMix
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 4),
-
-                  // Title - Constrained height
                   ConstrainedBox(
                     constraints: const BoxConstraints(maxHeight: 24),
                     child: Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 2),
                       child: Text(
-                        widget.movie['title'] ?? 'Unknown',
+                        widget.movie.movieName ?? 'Unknown',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: Theme.of(context).textTheme.bodyLarge?.color,
                           fontSize: 10,
                           height: 1.2,
                         ),
-                        maxLines: 2,
+                        maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),

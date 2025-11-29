@@ -21,25 +21,26 @@ void main() async {
     ),
   );
 
-
   runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     final ThemeController themeController = Get.put(ThemeController());
 
-    return Obx(() => GetMaterialApp(
-      title: 'Movie App',
-      debugShowCheckedModeBanner: false,
-      theme: AppThemes.lightTheme,
-      darkTheme: AppThemes.darkTheme,
-      themeMode: themeController.theme,
-      initialRoute: AppRoutes.mainNavigation,
-      getPages: AppRoutes.routes,
-    ));
+    return Obx(
+      () => GetMaterialApp(
+        title: 'Movie App',
+        debugShowCheckedModeBanner: false,
+        theme: AppThemes.lightTheme,
+        darkTheme: AppThemes.darkTheme,
+        themeMode: themeController.theme,
+        initialRoute: AppRoutes.mainNavigation,
+        getPages: AppRoutes.routes,
+      ),
+    );
   }
 }

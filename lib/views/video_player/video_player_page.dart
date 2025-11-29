@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:app/models/movies_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -12,7 +13,8 @@ import '../../services/volume_service.dart';
 import '../../widgets/movie_card.dart';
 
 class VideoPlayerPage extends StatefulWidget {
-  const VideoPlayerPage({Key? key}) : super(key: key);
+  String? videoUrl;
+  VideoPlayerPage({super.key, this.videoUrl});
 
   @override
   State<VideoPlayerPage> createState() => _VideoPlayerPageState();
@@ -51,9 +53,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     await VolumeService.hideSystemVolumeUI();
   }
 
-
   void _initializePlayer() async {
-    await controller.initializeVideo();
+    await controller.initializeVideo(customUrl: widget.videoUrl);
     _getBrightness();
     _getInitialVolume();
   }
@@ -108,7 +109,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     FlutterVolumeController.setVolume(systemVolume);
 
     // Apply audio boost to video player
-    if (controller.videoController != null && controller.videoController!.value.isInitialized) {
+    if (controller.videoController != null &&
+        controller.videoController!.value.isInitialized) {
       controller.videoController!.setVolume(audioBoost);
     }
   }
@@ -203,7 +205,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             }),
             Expanded(
               child: Container(
-                color: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+                color: isDark
+                    ? AppColors.darkBackground
+                    : AppColors.lightBackground,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -211,31 +215,34 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                       padding: const EdgeInsets.all(16),
                       child: Text(
                         'Similar Movies',
-                        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                        style: Theme.of(context).textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
                       ),
                     ),
                     Expanded(
-                      child: Obx(() => ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: controller.similarMovies.length,
-                        itemBuilder: (context, index) {
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: SizedBox(
-                              width: cardWidth,
-                              child: MovieCard(
-                                movie: controller.similarMovies[index],
-                                onTap: () => controller.playSimilarMovie(controller.similarMovies[index]),
-                                index: index,
+                      child: Obx(
+                        () => ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          itemCount: controller.similarMovies.length,
+                          itemBuilder: (context, index) {
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: SizedBox(
                                 width: cardWidth,
+                                child: MovieCard(
+                                  movie: Movie(),
+                                  onTap: () => controller.playSimilarMovie(
+                                    controller.similarMovies[index],
+                                  ),
+                                  index: index,
+                                  width: cardWidth,
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      )),
+                            );
+                          },
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -269,17 +276,29 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           aspectRatio: controller.videoController!.value.aspectRatio,
           child: GestureDetector(
             onTap: _isLocked ? null : _toggleControls,
-            onDoubleTapDown: _isLocked ? null : (details) => _handleDoubleTap(details),
-            onVerticalDragUpdate: _isLocked ? null : (details) => _handleVerticalDrag(details),
-            onVerticalDragEnd: _isLocked ? null : (_) {
-              setState(() {
-                _isDraggingBrightness = false;
-                _isDraggingVolume = false;
-              });
-            },
-            onHorizontalDragStart: _isLocked ? null : (details) => _handleHorizontalDragStart(details),
-            onHorizontalDragUpdate: _isLocked ? null : (details) => _handleHorizontalDragUpdate(details),
-            onHorizontalDragEnd: _isLocked ? null : (_) => _handleHorizontalDragEnd(),
+            onDoubleTapDown: _isLocked
+                ? null
+                : (details) => _handleDoubleTap(details),
+            onVerticalDragUpdate: _isLocked
+                ? null
+                : (details) => _handleVerticalDrag(details),
+            onVerticalDragEnd: _isLocked
+                ? null
+                : (_) {
+                    setState(() {
+                      _isDraggingBrightness = false;
+                      _isDraggingVolume = false;
+                    });
+                  },
+            onHorizontalDragStart: _isLocked
+                ? null
+                : (details) => _handleHorizontalDragStart(details),
+            onHorizontalDragUpdate: _isLocked
+                ? null
+                : (details) => _handleHorizontalDragUpdate(details),
+            onHorizontalDragEnd: _isLocked
+                ? null
+                : (_) => _handleHorizontalDragEnd(),
             child: Stack(
               fit: StackFit.expand,
               children: [
@@ -320,13 +339,23 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildControlButton(Icons.replay_10_rounded, () => controller.seekRelative(-10)),
-                Obx(() => _buildControlButton(
-                  controller.isPlaying.value ? Icons.pause_rounded : Icons.play_arrow_rounded,
-                  controller.togglePlayPause,
-                  size: 60,
-                )),
-                _buildControlButton(Icons.forward_10_rounded, () => controller.seekRelative(10)),
+                _buildControlButton(
+                  Icons.replay_10_rounded,
+                  () => controller.seekRelative(-10),
+                ),
+                Obx(
+                  () => _buildControlButton(
+                    controller.isPlaying.value
+                        ? Icons.pause_rounded
+                        : Icons.play_arrow_rounded,
+                    controller.togglePlayPause,
+                    size: 60,
+                  ),
+                ),
+                _buildControlButton(
+                  Icons.forward_10_rounded,
+                  () => controller.seekRelative(10),
+                ),
               ],
             ),
           ),
@@ -352,16 +381,18 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             },
           ),
           Expanded(
-            child: Obx(() => Text(
-              controller.currentMovie.value['title'] ?? 'Movie',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+            child: Obx(
+              () => Text(
+                controller.currentMovie.value['title'] ?? 'Movie',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            )),
+            ),
           ),
           PopupMenuButton<double>(
             icon: const Icon(Icons.speed_rounded, color: Colors.white),
@@ -378,7 +409,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           ),
           IconButton(
             icon: Icon(
-              _isFullscreen ? Icons.fullscreen_exit_rounded : Icons.fullscreen_rounded,
+              _isFullscreen
+                  ? Icons.fullscreen_exit_rounded
+                  : Icons.fullscreen_rounded,
               color: Colors.white,
             ),
             onPressed: _toggleFullscreen,
@@ -405,8 +438,12 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                 SliderTheme(
                   data: SliderThemeData(
                     trackHeight: 3,
-                    thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 6),
-                    overlayShape: const RoundSliderOverlayShape(overlayRadius: 12),
+                    thumbShape: const RoundSliderThumbShape(
+                      enabledThumbRadius: 6,
+                    ),
+                    overlayShape: const RoundSliderOverlayShape(
+                      overlayRadius: 12,
+                    ),
                     activeTrackColor: isDark
                         ? AppColors.primary
                         : Theme.of(context).colorScheme.primary,
@@ -414,9 +451,11 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                     thumbColor: isDark
                         ? AppColors.primary
                         : Theme.of(context).colorScheme.primary,
-                    overlayColor: (isDark
-                        ? AppColors.primary
-                        : Theme.of(context).colorScheme.primary).withOpacity(0.3),
+                    overlayColor:
+                        (isDark
+                                ? AppColors.primary
+                                : Theme.of(context).colorScheme.primary)
+                            .withOpacity(0.3),
                   ),
                   child: Slider(
                     value: position.inMilliseconds.toDouble(),
@@ -434,11 +473,17 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                     children: [
                       Text(
                         _formatDuration(position),
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
                       ),
                       Text(
                         _formatDuration(duration),
-                        style: const TextStyle(color: Colors.white, fontSize: 12),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                        ),
                       ),
                     ],
                   ),
@@ -451,7 +496,11 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     );
   }
 
-  Widget _buildControlButton(IconData icon, VoidCallback onPressed, {double size = 40}) {
+  Widget _buildControlButton(
+    IconData icon,
+    VoidCallback onPressed, {
+    double size = 40,
+  }) {
     return IconButton(
       icon: Icon(icon, color: Colors.white, size: size),
       onPressed: onPressed,
@@ -533,10 +582,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               padding: const EdgeInsets.only(top: 4),
               child: Text(
                 'Audio Boost',
-                style: TextStyle(
-                  color: Colors.orange.shade300,
-                  fontSize: 12,
-                ),
+                style: TextStyle(color: Colors.orange.shade300, fontSize: 12),
               ),
             ),
         ],
@@ -546,7 +592,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
   Widget _buildSeekIndicator() {
     final seekPosition = _swipeSeekPosition ?? controller.position.value;
-    final difference = seekPosition.inSeconds - controller.position.value.inSeconds;
+    final difference =
+        seekPosition.inSeconds - controller.position.value.inSeconds;
 
     return Container(
       alignment: Alignment.center,
@@ -555,14 +602,20 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            difference > 0 ? Icons.fast_forward_rounded : Icons.fast_rewind_rounded,
+            difference > 0
+                ? Icons.fast_forward_rounded
+                : Icons.fast_rewind_rounded,
             color: Colors.white,
             size: 50,
           ),
           const SizedBox(height: 8),
           Text(
             '${difference > 0 ? '+' : ''}${difference}s',
-            style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+            ),
           ),
           const SizedBox(height: 4),
           Text(
@@ -621,11 +674,16 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     final seekSeconds = (dx / 10).round();
 
     setState(() {
-      final newPosition = (_swipeSeekPosition ?? controller.position.value) + Duration(seconds: seekSeconds);
+      final newPosition =
+          (_swipeSeekPosition ?? controller.position.value) +
+          Duration(seconds: seekSeconds);
       final maxDuration = controller.duration.value;
 
       _swipeSeekPosition = Duration(
-        milliseconds: newPosition.inMilliseconds.clamp(0, maxDuration.inMilliseconds),
+        milliseconds: newPosition.inMilliseconds.clamp(
+          0,
+          maxDuration.inMilliseconds,
+        ),
       );
     });
   }

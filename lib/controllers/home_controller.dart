@@ -1,32 +1,103 @@
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
-import '../core/constants/movie_images.dart';
-import '../core/routes/app_routes.dart';
+
+import '../api/apsl_api_call.dart';
+import '../core/constants/api_end_points.dart';
+import '../models/categories_model.dart';
+import '../models/movies_model.dart';
 
 class HomeController extends GetxController {
-  final RxList<Map<String, dynamic>> featuredMovies = <Map<String, dynamic>>[].obs;
-  final RxList<Map<String, dynamic>> latestMovies = <Map<String, dynamic>>[].obs;
-  final RxList<Map<String, dynamic>> trendingMovies = <Map<String, dynamic>>[].obs;
-  final RxList<Map<String, dynamic>> upcomingMovies = <Map<String, dynamic>>[].obs;
-  final RxList<Map<String, dynamic>> recommendedMovies = <Map<String, dynamic>>[].obs;
+  // Category lists with proper typing
+  final RxList<CategoryModel> adultCategories = <CategoryModel>[].obs;
+  final RxList<CategoryModel> allCategories = <CategoryModel>[].obs;
+  final RxList<CategoryModel> nonAdultCategories = <CategoryModel>[].obs;
+  CategoryModel trendingCategory = CategoryModel();
+
   final RxInt currentCarouselIndex = 0.obs;
   final RxBool isLoading = true.obs;
   final RxString searchQuery = ''.obs;
 
-  @override
-  void onInit() {
-    super.onInit();
-    loadMovies();
+  final RxBool ageVerified = false.obs;
+
+  Future<void> fetchAllCategories() async {
+    try {
+      var res = await ApiCall.callService(
+        requestInfo: APIRequestInfoObj(
+          requestType: HTTPRequestType.get,
+          headers: ApiHeaders.getHeaders(),
+          url: ApiEndPoints.getAllCategories,
+        ),
+      );
+
+      debugPrint(res.toString());
+
+      // Parse response using model
+      final categoriesModel = categoriesModelFromJson(res.body);
+
+      if (categoriesModel.success == true && categoriesModel.data != null) {
+        allCategories.value = categoriesModel.data ?? [];
+
+        trendingCategory =
+            allCategories.firstWhereOrNull(
+              (cat) => cat.name?.toLowerCase() == 'trending',
+            ) ??
+            CategoryModel();
+
+        debugPrint('Trending Category: ${trendingCategory.name}');
+        // Filter adult categories
+        final adult = categoriesModel.data!
+            .where((cat) => cat.isAdult == true)
+            .toList();
+
+        // Filter non-adult categories
+        final nonAdult = categoriesModel.data!
+            .where((cat) => cat.isAdult == false)
+            .toList();
+
+        // Sort by index
+        adult.sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
+        nonAdult.sort((a, b) => (a.index ?? 0).compareTo(b.index ?? 0));
+
+        // Assign to observable lists
+        adultCategories.value = adult;
+        nonAdultCategories.value = nonAdult;
+
+        debugPrint('Adult Categories: ${adultCategories.length}');
+        debugPrint('Non-Adult Categories: ${nonAdultCategories.length}');
+
+        // Print category names for verification
+        debugPrint('Adult: ${adult.map((c) => c.name).toList()}');
+        debugPrint('Non-Adult: ${nonAdult.map((c) => c.name).toList()}');
+      }
+    } catch (e) {
+      rethrow;
+    }
   }
 
-  void loadMovies() {
-    // Using real TMDB movie images
-    featuredMovies.value = MovieImages.featuredMovies;
-    latestMovies.value = MovieImages.latestMovies;
-    trendingMovies.value = MovieImages.trendingMovies;
-    upcomingMovies.value = MovieImages.upcomingMovies;
-    recommendedMovies.value = MovieImages.recommendedMovies;
+  Future<MoviesModel> fetchMoviesByCategory(String categoryId) async {
+    final res = await ApiCall.callService(
+      requestInfo: APIRequestInfoObj(
+        requestType: HTTPRequestType.get,
+        headers: ApiHeaders.getHeaders(),
+        url: "${ApiEndPoints.getMoviesByCategory}$categoryId?page=1&limit=10",
+      ),
+    );
+    return moviesModelFromJson(res.body);
+  }
 
-    isLoading.value = false;
+  Future<MoviesModel> fetchMoviesByCategoryWithPage(
+    String categoryId,
+    int page,
+  ) async {
+    final res = await ApiCall.callService(
+      requestInfo: APIRequestInfoObj(
+        requestType: HTTPRequestType.get,
+        headers: ApiHeaders.getHeaders(),
+        url:
+            "${ApiEndPoints.getMoviesByCategory}$categoryId?page=$page&limit=20",
+      ),
+    );
+    return moviesModelFromJson(res.body);
   }
 
   void onSearchChanged(String query) {
@@ -34,8 +105,9 @@ class HomeController extends GetxController {
     // Implement search logic here
   }
 
-  void onMovieTapped(Map<String, dynamic> movie) {
-    Get.toNamed(AppRoutes.videoPlayer, arguments: {'movie': movie});
+  void verifyAge(bool verified) {
+    ageVerified.value = verified;
   }
 
+  void onMovieTapped(Map<String, dynamic> movie) {}
 }

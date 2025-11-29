@@ -30,7 +30,7 @@ class AppRoutes {
     ),
     GetPage(
       name: AppRoutes.videoPlayer,
-      page: () => const VideoPlayerPage(),
+      page: () =>  VideoPlayerPage(),
     )
   ];
 }
