@@ -8,7 +8,10 @@ import 'controllers/theme_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize GetStorage
   await GetStorage.init();
+
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -30,15 +33,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeController themeController = Get.put(ThemeController());
-
     return Obx(
-      () => GetMaterialApp(
-        title: 'Movie App',
+          () => GetMaterialApp(
+        title: 'Cineza',
         debugShowCheckedModeBanner: false,
         theme: AppThemes.lightTheme,
         darkTheme: AppThemes.darkTheme,
         themeMode: themeController.theme,
-        initialRoute: AppRoutes.mainNavigation,
+        initialRoute: AppRoutes.splash,
         getPages: AppRoutes.routes,
       ),
     );
