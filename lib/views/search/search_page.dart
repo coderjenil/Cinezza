@@ -122,7 +122,7 @@ class SearchPage extends StatelessWidget {
             itemBuilder: (context, index) {
               return MovieCard(
                 movie: Movie(),
-                onTap: () {},
+
                 index: index,
                 width: cardWidth,
               );

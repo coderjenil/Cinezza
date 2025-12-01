@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 
@@ -42,7 +43,7 @@ class WatchHistoryService {
         await prefs.setStringList(_watchHistoryKey, watchedMovies);
       }
     } catch (e) {
-      print('Error saving watch progress: $e');
+      debugPrint('Error saving watch progress: $e');
     }
   }
 
@@ -56,7 +57,7 @@ class WatchHistoryService {
         return json.decode(watchDataStr) as Map<String, dynamic>;
       }
     } catch (e) {
-      print('Error getting watch progress: $e');
+      debugPrint('Error getting watch progress: $e');
     }
     return null;
   }
@@ -77,7 +78,7 @@ class WatchHistoryService {
       watchedMovies.remove(movieId);
       await prefs.setStringList(_watchHistoryKey, watchedMovies);
     } catch (e) {
-      print('Error clearing movie history: $e');
+      debugPrint('Error clearing movie history: $e');
     }
   }
 
@@ -96,7 +97,7 @@ class WatchHistoryService {
       }
       return historyList;
     } catch (e) {
-      print('Error getting all watch history: $e');
+      debugPrint('Error getting all watch history: $e');
       return [];
     }
   }

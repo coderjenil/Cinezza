@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
 
@@ -56,7 +57,7 @@ class AppVideoController extends GetxController {
         videoController!.play();
         isPlaying.value = true;
       } catch (e) {
-        print('Error initializing video: $e');
+        debugPrint('Error initializing video: $e');
       }
     } else {
       if (customUrl != null) {
@@ -66,7 +67,6 @@ class AppVideoController extends GetxController {
       } else {
         videoUrl = "";
       }
-
 
       videoController = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
 
@@ -78,7 +78,7 @@ class AppVideoController extends GetxController {
         videoController!.play();
         isPlaying.value = true;
       } catch (e) {
-        print('Error initializing video: $e');
+        debugPrint('Error initializing video: $e');
       }
     }
   }

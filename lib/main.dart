@@ -1,19 +1,25 @@
+import 'package:app/controllers/premium_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'controllers/splash_controller.dart';
 import 'core/theme/app_themes.dart';
 import 'core/routes/app_routes.dart';
 import 'controllers/theme_controller.dart';
 
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize GetStorage
   await GetStorage.init();
+
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+  Get.put(SplashController());
+  Get.put(PremiumController());
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -31,15 +37,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ThemeController themeController = Get.put(ThemeController());
-
     return Obx(
       () => GetMaterialApp(
-        title: 'Movie App',
+        title: 'Cinezza',
         debugShowCheckedModeBanner: false,
         theme: AppThemes.lightTheme,
         darkTheme: AppThemes.darkTheme,
         themeMode: themeController.theme,
-        initialRoute: AppRoutes.mainNavigation,
+        initialRoute: AppRoutes.splash,
         getPages: AppRoutes.routes,
       ),
     );

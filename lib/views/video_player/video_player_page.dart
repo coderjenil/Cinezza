@@ -7,8 +7,10 @@ import 'package:video_player/video_player.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+import '../../controllers/splash_controller.dart';
 import '../../controllers/video_player_controller.dart';
 import '../../core/theme/app_colors.dart';
+import '../../services/user_api_service.dart';
 import '../../services/volume_service.dart';
 import '../../services/watch_history_service.dart';
 
@@ -45,8 +47,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   Map<String, dynamic>? _watchHistory;
   bool _isInitializing = true;
 
-  final String _selectedLanguage = 'Hindi dub';
-
   @override
   void initState() {
     super.initState();
@@ -62,9 +62,11 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   Future<void> _initializeContent() async {
     if (widget.movie.seasons != null && widget.movie.seasons!.isNotEmpty) {
       await _loadWatchHistoryAndPlay();
+      _decreaseTrialCount();
     } else {
       _currentVideoUrl = widget.movie.videoUrl;
       await _initializePlayer();
+      _decreaseTrialCount();
     }
   }
 
@@ -115,6 +117,27 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     _getBrightness();
     _getInitialVolume();
     setState(() => _isInitializing = false);
+  }
+
+  Future<void> _decreaseTrialCount() async {
+    try {
+      final splash = Get.find<SplashController>();
+      final user = splash.userModel.value?.user;
+
+      if (user == null) return;
+
+      final remaining = (user.trialCount);
+
+      if (remaining > 0 && (user.planActive == false)) {
+        debugPrint("🎟 Trial used. Remaining: ${remaining - 1}");
+        await UserService.updateUserByDeviceId(
+          userId: user.id,
+          trialCount: remaining - 1,
+        );
+      }
+    } catch (e) {
+      debugPrint("❌ Error reducing trial count: $e");
+    }
   }
 
   void _startProgressTracking() {
@@ -254,7 +277,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       final brightness = await ScreenBrightness().current;
       if (mounted) setState(() => _brightness = brightness);
     } catch (e) {
-      print('Error getting brightness: $e');
+      debugPrint('Error getting brightness: $e');
     }
   }
 
@@ -270,7 +293,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       await ScreenBrightness().setScreenBrightness(brightness);
       setState(() => _brightness = brightness);
     } catch (e) {
-      print('Error setting brightness: $e');
+      debugPrint('Error setting brightness: $e');
     }
   }
 

@@ -181,7 +181,6 @@ class _CategoryMoviesListState extends State<CategoryMoviesList>
                             width: widget.cardWidth,
                             child: MovieCard(
                               movie: movies[index],
-                              onTap: () {},
                               index: index,
                               width: widget.cardWidth,
                             ),

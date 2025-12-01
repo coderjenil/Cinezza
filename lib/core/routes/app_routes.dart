@@ -1,17 +1,26 @@
 import 'package:get/get.dart';
 import '../../models/movies_model.dart';
+import '../../views/premium/premium_plan_screen.dart';
+import '../../views/splash/splash_screen.dart';
 import '../../views/main_navigation.dart';
 import '../../views/search/search_page.dart';
 import '../../views/see_all/see_all_page.dart';
 import '../../views/video_player/video_player_page.dart';
 
 class AppRoutes {
-  static const String mainNavigation = '/';
+  static const String splash = '/';
+  static const String mainNavigation = '/home';
   static const String search = '/search';
   static const String seeAll = '/see-all';
   static const String videoPlayer = '/video-player';
+  static const String premiumPlan = '/premium-plan';
 
   static List<GetPage> routes = [
+    GetPage(
+      name: splash,
+      page: () => SplashScreen(),
+      transition: Transition.fadeIn,
+    ),
     GetPage(
       name: mainNavigation,
       page: () => MainNavigation(),
@@ -33,5 +42,6 @@ class AppRoutes {
       name: AppRoutes.videoPlayer,
       page: () => VideoPlayerPage(movie: Movie()),
     ),
+    GetPage(name: AppRoutes.premiumPlan, page: () => PremiumPlansPage()),
   ];
 }

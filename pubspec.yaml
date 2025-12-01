@@ -48,6 +48,9 @@ dependencies:
   connectivity_plus: ^7.0.0
   shared_preferences: ^2.5.3
   device_info_plus: ^12.3.0
+  uuid: ^4.5.2
+  confetti: ^0.8.0
+  razorpay_flutter: ^1.4.0
 
 dev_dependencies:
   flutter_test:

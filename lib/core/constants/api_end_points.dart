@@ -4,13 +4,15 @@ class ApiEndPoints {
   static const String registerUser = "${baseURL}auth/login";
   static const String getAllCategories = "${baseURL}categories/";
   static const String getMoviesByCategory = "${baseURL}movies/category/";
+  static const String registerUserUrl = "${baseURL}users/register";
+  static const String updateUserByDevice = "${baseURL}users/";
+  static const String fetchPremiumPlans = "${baseURL}plans";
 }
 
 class ApiHeaders {
   static Map<String, String> getHeaders() {
-    // Example: Getting a token from shared preferences
     return {
-      // 'Content-Type': 'application/json',
+      'Content-Type': 'application/json',
       'x-api-key': "fRAoOLsCBIGK8Jq1ZMPMLaAEVQMFJW23",
     };
   }
