@@ -6,6 +6,7 @@ import 'core/theme/app_themes.dart';
 import 'core/routes/app_routes.dart';
 import 'controllers/theme_controller.dart';
 
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await GetStorage.init();

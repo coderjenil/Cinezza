@@ -64,6 +64,16 @@ class _MovieCardState extends State<MovieCard>
     });
   }
 
+  void _handleCardTap() {
+    // Always go to video player page, pass the movie object
+    Get.to(
+      () => VideoPlayerPage(
+        movie: widget.movie,
+        // directVideoUrl: widget.movie.videoUrl,
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -81,11 +91,7 @@ class _MovieCardState extends State<MovieCard>
         child: ScaleTransition(
           scale: _scaleAnimation,
           child: GestureDetector(
-            onTap: () {
-              Get.to(
-                () => VideoPlayerPage(videoUrl: widget.movie.videoUrl ?? ''),
-              );
-            },
+            onTap: _handleCardTap,
             child: SizedBox(
               width: widget.width,
               child: Column(

@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import '../../models/movies_model.dart';
 import '../../views/main_navigation.dart';
 import '../../views/search/search_page.dart';
 import '../../views/see_all/see_all_page.dart';
@@ -30,7 +31,7 @@ class AppRoutes {
     ),
     GetPage(
       name: AppRoutes.videoPlayer,
-      page: () =>  VideoPlayerPage(),
-    )
+      page: () => VideoPlayerPage(movie: Movie()),
+    ),
   ];
 }
