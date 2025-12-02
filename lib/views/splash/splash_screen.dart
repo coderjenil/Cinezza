@@ -148,12 +148,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     borderRadius: BorderRadius.circular(20),
                     gradient: LinearGradient(
                       colors: [
-                        AppColors.primary.withOpacity(0.1),
-                        Colors.purple.withOpacity(0.05),
+                        AppColors.primary.withValues(alpha: 0.1),
+                        Colors.purple.withValues(alpha: 0.05),
                       ],
                     ),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.1),
+                      color: Colors.white.withValues(alpha: 0.1),
                       width: 1,
                     ),
                   ),
@@ -223,7 +223,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withOpacity(0.3),
+                    color: AppColors.primary.withValues(alpha: 0.3),
                     blurRadius: 80 + (_glowController.value * 40),
                     spreadRadius: 20,
                   ),
@@ -243,17 +243,17 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Colors.white.withOpacity(0.2),
-                Colors.white.withOpacity(0.1),
+                Colors.white.withValues(alpha: 0.2),
+                Colors.white.withValues(alpha: 0.1),
               ],
             ),
             border: Border.all(
-              color: Colors.white.withOpacity(0.3),
+              color: Colors.white.withValues(alpha: 0.3),
               width: 2,
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.primary.withOpacity(0.5),
+                color: AppColors.primary.withValues(alpha: 0.5),
                 blurRadius: 60,
                 spreadRadius: 10,
               ),
@@ -267,7 +267,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                 decoration: BoxDecoration(
                   gradient: RadialGradient(
                     colors: [
-                      AppColors.primary.withOpacity(0.3),
+                      AppColors.primary.withValues(alpha: 0.3),
                       Colors.transparent,
                     ],
                   ),
@@ -307,12 +307,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                           gradient: LinearGradient(
                             colors: [
                               AppColors.primary,
-                              AppColors.primary.withOpacity(0.8),
+                              AppColors.primary.withValues(alpha: 0.8),
                             ],
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: AppColors.primary.withOpacity(0.5),
+                              color: AppColors.primary.withValues(alpha: 0.5),
                               blurRadius: 20,
                             ),
                           ],
@@ -373,7 +373,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         foreground: Paint()
                           ..style = PaintingStyle.stroke
                           ..strokeWidth = 2
-                          ..color = AppColors.primary.withOpacity(0.5),
+                          ..color = AppColors.primary.withValues(alpha: 0.5),
                         letterSpacing: 16,
                       ),
                     ),
@@ -387,13 +387,13 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                           ..shader = LinearGradient(
                             colors: [
                               Colors.white,
-                              Colors.white.withOpacity(0.8),
+                              Colors.white.withValues(alpha: 0.8),
                             ],
                           ).createShader(Rect.fromLTWH(0, 0, 300, 70)),
                         letterSpacing: 16,
                         shadows: [
                           Shadow(
-                            color: AppColors.primary.withOpacity(0.5),
+                            color: AppColors.primary.withValues(alpha: 0.5),
                             blurRadius: 30,
                           ),
                         ],
@@ -411,12 +411,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                     borderRadius: BorderRadius.circular(30),
                     gradient: LinearGradient(
                       colors: [
-                        Colors.white.withOpacity(0.1),
-                        Colors.white.withOpacity(0.05),
+                        Colors.white.withValues(alpha: 0.1),
+                        Colors.white.withValues(alpha: 0.05),
                       ],
                     ),
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
@@ -428,7 +428,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                         'Ultimate Streaming Experience',
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           letterSpacing: 3,
                           fontWeight: FontWeight.w300,
                         ),
@@ -464,12 +464,12 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
               borderRadius: BorderRadius.circular(25),
               gradient: LinearGradient(
                 colors: [
-                  Colors.white.withOpacity(0.1),
-                  Colors.white.withOpacity(0.05),
+                  Colors.white.withValues(alpha: 0.1),
+                  Colors.white.withValues(alpha: 0.05),
                 ],
               ),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.white.withValues(alpha: 0.2),
                 width: 1,
               ),
             ),
@@ -488,7 +488,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                               height: 6,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(3),
-                                color: Colors.white.withOpacity(0.1),
+                                color: Colors.white.withValues(alpha: 0.1),
                               ),
                             ),
                             AnimatedContainer(
@@ -500,14 +500,14 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                                 borderRadius: BorderRadius.circular(3),
                                 gradient: LinearGradient(
                                   colors: [
-                                    AppColors.primary.withOpacity(0.7),
+                                    AppColors.primary.withValues(alpha: 0.7),
                                     AppColors.primary,
                                     Colors.white,
                                   ],
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.primary.withOpacity(0.5),
+                                    color: AppColors.primary.withValues(alpha: 0.5),
                                     blurRadius: 15,
                                   ),
                                 ],
@@ -530,7 +530,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             key: ValueKey(controller.loadingMessage.value),
                             style: TextStyle(
                               fontSize: 13,
-                              color: Colors.white.withOpacity(0.8),
+                              color: Colors.white.withValues(alpha: 0.8),
                               letterSpacing: 2,
                             ),
                           ),
@@ -584,7 +584,7 @@ class MeshGradientPainter extends CustomPainter {
         ),
         radius: 1.5,
         colors: [
-          AppColors.primary.withOpacity(0.05),
+          AppColors.primary.withValues(alpha: 0.05),
           Colors.transparent,
         ],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
@@ -604,10 +604,10 @@ class SpinningBorderPainter extends CustomPainter {
     final paint = Paint()
       ..shader = SweepGradient(
         colors: [
-          Colors.white.withOpacity(0.8),
+          Colors.white.withValues(alpha: 0.8),
           Colors.transparent,
           Colors.transparent,
-          Colors.white.withOpacity(0.8),
+          Colors.white.withValues(alpha: 0.8),
         ],
         stops: [0.0, 0.2, 0.8, 1.0],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
