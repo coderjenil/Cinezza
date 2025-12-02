@@ -1,5 +1,5 @@
 class ApiEndPoints {
-  // static const String baseURL = "http://192.168.1.139:8080/api/";
+  // static const String baseURL = "http://192.168.1.64:3000/api/";
   static const String baseURL = "https://www.quizonline.live/api/";
   static const String registerUser = "${baseURL}auth/login";
   static const String getAllCategories = "${baseURL}categories/";

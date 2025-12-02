@@ -93,7 +93,6 @@ class PaymentService {
   }
 
   /// UI Helpers
-
   void _showSnack(String msg) {
     if (_context == null) return;
     ScaffoldMessenger.of(_context!).showSnackBar(SnackBar(content: Text(msg)));

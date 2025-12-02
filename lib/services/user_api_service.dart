@@ -78,7 +78,7 @@ class UserService {
     // If user data not loaded yet, prevent crash
     if (user == null) {
       debugPrint("⚠ User data unavailable, redirecting to premium.");
-      Get.to(() => PremiumPlansPage());
+      // Get.to(() => PremiumPlansPage());
       return;
     }
 
