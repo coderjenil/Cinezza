@@ -1,17 +1,23 @@
-import 'dart:convert';
 import 'package:app/core/constants/api_end_points.dart';
+import 'package:app/models/user_model.dart';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+
 import '../api/apsl_api_call.dart';
 import '../core/routes/app_routes.dart';
-import '../services/user_api_service.dart';
 import '../utils/device_helper.dart';
 
 class SplashController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxString loadingMessage = 'Initializing...'.obs;
   final RxDouble progress = 0.0.obs;
+  Rx<UserModel?> userModel = Rx<UserModel?>(null);
   String? deviceId;
+  bool get isPremium => userModel.value?.user.planActive == true;
+
+  int get trialLeft => userModel.value?.user.trialCount ?? 0;
+
 
   @override
   void onInit() {
@@ -48,7 +54,7 @@ class SplashController extends GetxController {
       isLoading.value = false;
       Get.offAllNamed(AppRoutes.mainNavigation);
     } catch (e) {
-      print('Error during initialization: $e');
+      debugPrint('Error during initialization: $e');
       // Navigate anyway after delay
       await Future.delayed(Duration(seconds: 2));
       Get.offAllNamed(AppRoutes.mainNavigation);
@@ -58,20 +64,20 @@ class SplashController extends GetxController {
   Future<void> _getDeviceId() async {
     try {
       deviceId = await DeviceHelper.getDeviceId();
-      print('Device ID: $deviceId');
+      debugPrint('Device ID: $deviceId');
 
       // Get full device info for debugging
       Map<String, dynamic> deviceInfo = await DeviceHelper.getDeviceInfo();
-      print('Device Info: $deviceInfo');
+      debugPrint('Device Info: $deviceInfo');
     } catch (e) {
-      print('Error getting device ID: $e');
+      debugPrint('Error getting device ID: $e');
       rethrow;
     }
   }
 
   Future<void> _registerUser() async {
     if (deviceId == null || deviceId!.isEmpty) {
-      print('Device ID is null or empty');
+      debugPrint('Device ID is null or empty');
       return;
     }
 
@@ -82,9 +88,7 @@ class SplashController extends GetxController {
           requestType: HTTPRequestType.post,
           url: ApiEndPoints.registerUserUrl,
           headers: ApiHeaders.getHeaders(),
-          parameter: {
-            'device_id': deviceId!,
-          },
+          parameter: {'device_id': deviceId!},
           serviceName: 'Register User',
           timeSecond: 30,
         ),
@@ -92,14 +96,41 @@ class SplashController extends GetxController {
 
       // Parse response
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        print('Register User Success: $data');
+        userModel.value = userModelFromJson(response.body);
+
+        if (userModel.value?.user.planExpiryDate != null) {
+          final expiryDate = DateTime.tryParse(
+            userModel.value?.user.planExpiryDate ?? "",
+          );
+
+          if (expiryDate != null && expiryDate.isBefore(DateTime.now())) {
+            /// 🛠 Update backend subscription status to inactive
+            var res = await ApiCall.callService(
+              requestInfo: APIRequestInfoObj(
+                requestType: HTTPRequestType.put,
+                url: ApiEndPoints.updateUserByDevice + deviceId!,
+                headers: ApiHeaders.getHeaders(),
+                parameter: {
+                  "plan_active": false,
+                  "active_plan": null,
+                  "plan_expiry_date": null,
+                },
+                serviceName: 'Expire Subscription',
+                timeSecond: 30,
+              ),
+            );
+
+            Get.find<SplashController>().userModel.value = userModelFromJson(
+              res.body,
+            );
+          }
+        }
       } else {
-        print('Register User Failed: ${response.statusCode}');
-        print('Response: ${response.body}');
+        debugPrint('Register User Failed: ${response.statusCode}');
+        debugPrint('Response: ${response.body}');
       }
     } catch (e) {
-      print('Error registering user: $e');
+      debugPrint('Error registering user: $e');
       // Don't rethrow - continue app initialization even if registration fails
     }
   }

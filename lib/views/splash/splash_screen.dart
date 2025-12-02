@@ -4,15 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/splash_controller.dart';
 import '../../core/theme/app_colors.dart';
+import '../../services/payment_service.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with TickerProviderStateMixin {
   late AnimationController _morphController;
   late AnimationController _floatController;
   late AnimationController _spinController;
@@ -51,6 +53,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
       duration: const Duration(milliseconds: 3000),
       vsync: this,
     )..repeat();
+
+    PaymentService.instance.init();
   }
 
   @override
@@ -73,11 +77,7 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFF0a0e27),
-              Color(0xFF1a1f3a),
-              Color(0xFF2d3561),
-            ],
+            colors: [Color(0xFF0a0e27), Color(0xFF1a1f3a), Color(0xFF2d3561)],
           ),
         ),
         child: Stack(
@@ -135,7 +135,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
         return AnimatedBuilder(
           animation: _floatController,
           builder: (context, child) {
-            final offset = sin(_floatController.value * 2 * pi + (index * 1.2)) * 20;
+            final offset =
+                sin(_floatController.value * 2 * pi + (index * 1.2)) * 20;
             return Positioned(
               top: 100 + (index * 120.0) + offset,
               right: -100 + (index % 2 == 0 ? 50 : -50),
@@ -338,15 +339,13 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
     return AnimatedBuilder(
       animation: _morphController,
       builder: (context, child) {
-        final slideAnim = Tween<Offset>(
-          begin: Offset(0, 0.5),
-          end: Offset.zero,
-        ).animate(
-          CurvedAnimation(
-            parent: _morphController,
-            curve: Interval(0.3, 0.8, curve: Curves.easeOut),
-          ),
-        );
+        final slideAnim = Tween<Offset>(begin: Offset(0, 0.5), end: Offset.zero)
+            .animate(
+              CurvedAnimation(
+                parent: _morphController,
+                curve: Interval(0.3, 0.8, curve: Curves.easeOut),
+              ),
+            );
 
         final fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
           CurvedAnimation(
@@ -494,7 +493,8 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                             AnimatedContainer(
                               duration: Duration(milliseconds: 300),
                               height: 6,
-                              width: (MediaQuery.of(context).size.width - 140) *
+                              width:
+                                  (MediaQuery.of(context).size.width - 140) *
                                   controller.progress.value,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(3),
@@ -507,7 +507,9 @@ class _SplashScreenState extends State<SplashScreen> with TickerProviderStateMix
                                 ),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: AppColors.primary.withValues(alpha: 0.5),
+                                    color: AppColors.primary.withValues(
+                                      alpha: 0.5,
+                                    ),
                                     blurRadius: 15,
                                   ),
                                 ],
@@ -578,15 +580,9 @@ class MeshGradientPainter extends CustomPainter {
     for (int i = 0; i < 3; i++) {
       final offset = sin(animation * 2 * pi + i) * 100;
       paint.shader = RadialGradient(
-        center: Alignment(
-          -0.5 + (i * 0.5),
-          -0.5 + offset / size.height,
-        ),
+        center: Alignment(-0.5 + (i * 0.5), -0.5 + offset / size.height),
         radius: 1.5,
-        colors: [
-          AppColors.primary.withValues(alpha: 0.05),
-          Colors.transparent,
-        ],
+        colors: [AppColors.primary.withValues(alpha: 0.05), Colors.transparent],
       ).createShader(Rect.fromLTWH(0, 0, size.width, size.height));
 
       canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);

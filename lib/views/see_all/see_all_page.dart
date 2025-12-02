@@ -79,7 +79,7 @@ class _SeeAllPageState extends State<SeeAllPage> {
           final bDate = b.createdAt != null
               ? DateTime.tryParse(b.createdAt!) ?? DateTime(1970)
               : DateTime(1970);
-          return bDate.compareTo(aDate); 
+          return bDate.compareTo(aDate);
         });
 
         if (mounted) {
@@ -198,9 +198,7 @@ class _SeeAllPageState extends State<SeeAllPage> {
                           final movie = _movies[index];
                           return MovieCard(
                             movie: movie,
-                            onTap: () {
-                              print('Tapped movie: ${movie.movieName}');
-                            },
+
                             index: 0, // Pass 0 to disable staggered animation
                           );
                         },

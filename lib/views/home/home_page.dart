@@ -299,7 +299,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               _buildCompactIconButton(
                 context,
                 Icons.search_rounded,
-                () => Get.toNamed(AppRoutes.search),
+                () => Get.toNamed(AppRoutes.premiumPlan),
                 isDark,
               ),
               const SizedBox(width: 8),

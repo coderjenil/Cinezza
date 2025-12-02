@@ -1,6 +1,9 @@
-import 'dart:math';
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:video_player/video_player.dart';
+
+import '../services/daily_motion_service.dart';
+import '../services/user_agent_service.dart';
 
 class AppVideoController extends GetxController {
   VideoPlayerController? videoController;
@@ -13,27 +16,13 @@ class AppVideoController extends GetxController {
   final RxDouble playbackSpeed = 1.0.obs;
 
   final Rx<Map<String, dynamic>> currentMovie = Rx<Map<String, dynamic>>({});
-  final RxList<Map<String, dynamic>> similarMovies = <Map<String, dynamic>>[].obs;
-
-  // List of sample video URLs
-  final List<String> sampleVideos = [
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4',
-    'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4',
-  ];
+  final RxList<Map<String, dynamic>> similarMovies =
+      <Map<String, dynamic>>[].obs;
 
   @override
   void onInit() {
     super.onInit();
     _loadMovieData();
-    _loadSimilarMovies();
   }
 
   void _loadMovieData() {
@@ -43,100 +32,59 @@ class AppVideoController extends GetxController {
     }
   }
 
-  void _loadSimilarMovies() {
-    similarMovies.value = [
-      {
-        'id': 'similar_1',
-        'title': 'Inception',
-        'poster': 'https://image.tmdb.org/t/p/w500/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg',
-        'videoUrl': sampleVideos[0],
-      },
-      {
-        'id': 'similar_2',
-        'title': 'Interstellar',
-        'poster': 'https://image.tmdb.org/t/p/w500/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg',
-        'videoUrl': sampleVideos[1],
-      },
-      {
-        'id': 'similar_3',
-        'title': 'The Matrix',
-        'poster': 'https://image.tmdb.org/t/p/w500/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg',
-        'videoUrl': sampleVideos[2],
-      },
-      {
-        'id': 'similar_4',
-        'title': 'The Dark Knight',
-        'poster': 'https://image.tmdb.org/t/p/w500/qJ2tW6WMUDux911r6m7haRef0WH.jpg',
-        'videoUrl': sampleVideos[3],
-      },
-      {
-        'id': 'similar_5',
-        'title': 'Fight Club',
-        'poster': 'https://image.tmdb.org/t/p/w500/pB8BM7pdSp6B6Ih7QZ4DrQ3PmJK.jpg',
-        'videoUrl': sampleVideos[4],
-      },
-      {
-        'id': 'similar_6',
-        'title': 'Pulp Fiction',
-        'poster': 'https://image.tmdb.org/t/p/w500/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg',
-        'videoUrl': sampleVideos[5],
-      },
-      {
-        'id': 'similar_7',
-        'title': 'The Shawshank Redemption',
-        'poster': 'https://image.tmdb.org/t/p/w500/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg',
-        'videoUrl': sampleVideos[6],
-      },
-      {
-        'id': 'similar_8',
-        'title': 'The Godfather',
-        'poster': 'https://image.tmdb.org/t/p/w500/3bhkrj58Vtu7enYsRolD1fZdja1.jpg',
-        'videoUrl': sampleVideos[7],
-      },
-      {
-        'id': 'similar_9',
-        'title': 'Forrest Gump',
-        'poster': 'https://image.tmdb.org/t/p/w500/arw2vcBveWOVZr6pxd9XTd1TdQa.jpg',
-        'videoUrl': sampleVideos[8],
-      },
-      {
-        'id': 'similar_10',
-        'title': 'The Lord of the Rings',
-        'poster': 'https://image.tmdb.org/t/p/w500/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg',
-        'videoUrl': sampleVideos[9],
-      },
-    ];
-  }
-
   Future<void> initializeVideo({String? customUrl}) async {
-    // Get random video URL if not provided
     String videoUrl;
 
-    if (customUrl != null) {
-      videoUrl = customUrl;
-    } else if (currentMovie.value['videoUrl'] != null) {
-      videoUrl = currentMovie.value['videoUrl'];
+    if (DailymotionService.isDailymotionUrl(customUrl ?? "")) {
+      videoUrl = await DailymotionService.extractStreamUrl(customUrl ?? "");
+      final videoUserAgent = await RandomDeviceUserAgent.nextForVideo();
+
+      videoController = VideoPlayerController.networkUrl(
+        Uri.parse(videoUrl),
+        httpHeaders: {
+          'User-Agent': videoUserAgent,
+          'Referer': 'https://www.dailymotion.com/',
+          'Accept': '*/*',
+          'Connection': 'keep-alive',
+        },
+      );
+
+      try {
+        await videoController!.initialize();
+        isInitialized.value = true;
+
+        videoController!.addListener(videoListener);
+        videoController!.play();
+        isPlaying.value = true;
+      } catch (e) {
+        debugPrint('Error initializing video: $e');
+      }
     } else {
-      // Pick random video from list
-      final random = Random();
-      videoUrl = sampleVideos[random.nextInt(sampleVideos.length)];
-    }
+      if (customUrl != null) {
+        videoUrl = customUrl;
+      } else if (currentMovie.value['videoUrl'] != null) {
+        videoUrl = currentMovie.value['videoUrl'];
+      } else {
+        videoUrl = "";
+      }
 
-    videoController = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
+      videoController = VideoPlayerController.networkUrl(Uri.parse(videoUrl));
 
-    try {
-      await videoController!.initialize();
-      isInitialized.value = true;
+      try {
+        await videoController!.initialize();
+        isInitialized.value = true;
 
-      videoController!.addListener(_videoListener);
-      videoController!.play();
-      isPlaying.value = true;
-    } catch (e) {
-      print('Error initializing video: $e');
+        videoController!.addListener(videoListener);
+        videoController!.play();
+        isPlaying.value = true;
+      } catch (e) {
+        debugPrint('Error initializing video: $e');
+      }
     }
   }
 
-  void _videoListener() {
+  // Make this public for access from VideoPlayerPage
+  void videoListener() {
     if (videoController != null && videoController!.value.isInitialized) {
       position.value = videoController!.value.position;
       duration.value = videoController!.value.duration;
@@ -181,19 +129,24 @@ class AppVideoController extends GetxController {
   }
 
   void playSimilarMovie(Map<String, dynamic> movie) async {
-    await videoController?.dispose();
+    if (videoController != null) {
+      await videoController!.pause();
+      videoController!.removeListener(videoListener);
+      await videoController!.dispose();
+    }
 
     currentMovie.value = movie;
     isInitialized.value = false;
 
-    // Use video URL from movie data
     await initializeVideo(customUrl: movie['videoUrl']);
   }
 
   @override
   void dispose() {
-    videoController?.removeListener(_videoListener);
-    videoController?.dispose();
+    if (videoController != null) {
+      videoController!.removeListener(videoListener);
+      videoController!.dispose();
+    }
     super.dispose();
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:flutter/material.dart';
 
 class DeviceHelper {
   /// Get unique device ID directly from hardware (NO STORAGE)
@@ -18,7 +19,7 @@ class DeviceHelper {
         identifier = iosInfo.identifierForVendor ?? '';
       }
     } catch (e) {
-      print('Error getting device ID: $e');
+      debugPrint('Error getting device ID: $e');
     }
 
     return identifier;
@@ -53,7 +54,7 @@ class DeviceHelper {
         };
       }
     } catch (e) {
-      print('Error getting device info: $e');
+      debugPrint('Error getting device info: $e');
     }
 
     return {'platform': 'Unknown'};

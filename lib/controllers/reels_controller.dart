@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ReelsController extends GetxController {
@@ -17,15 +18,17 @@ class ReelsController extends GetxController {
     // Simulated reels data - Replace with API calls
     reels.value = List.generate(
       15,
-          (index) => {
+      (index) => {
         'id': 'reel_$index',
         'title': 'Epic Movie Moment #${index + 1}',
-        'thumbnail': 'https://via.placeholder.com/400x700/0A0E27/00F0FF?text=Reel+${index + 1}',
+        'thumbnail':
+            'https://via.placeholder.com/400x700/0A0E27/00F0FF?text=Reel+${index + 1}',
         'videoUrl': 'https://example.com/reel_$index.mp4',
         'likes': 1000 + (index * 100),
         'views': 10000 + (index * 500),
         'username': 'user_${index % 5}',
-        'userAvatar': 'https://via.placeholder.com/100x100/FF0080/FFFFFF?text=U${index % 5}',
+        'userAvatar':
+            'https://via.placeholder.com/100x100/FF0080/FFFFFF?text=U${index % 5}',
       },
     );
 
@@ -50,7 +53,7 @@ class ReelsController extends GetxController {
 
   void shareReel(String reelId) {
     // Implement share functionality
-    print('Sharing reel: $reelId');
+    debugPrint('Sharing reel: $reelId');
   }
 
   void onReelChanged(int index) {

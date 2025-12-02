@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class ProfileController extends GetxController {
@@ -26,27 +27,27 @@ class ProfileController extends GetxController {
 
   void updateNotificationSettings(bool enabled) {
     // Implement notification settings
-    print('Notifications: $enabled');
+    debugPrint('Notifications: $enabled');
   }
 
   void updateDownloadQuality(String quality) {
     // Implement download quality settings
-    print('Download quality: $quality');
+    debugPrint('Download quality: $quality');
   }
 
   void logout() {
     // Implement logout logic
-    print('Logging out...');
+    debugPrint('Logging out...');
     Get.offAllNamed('/login');
   }
 
   void openHelpCenter() {
     // Navigate to help center
-    print('Opening help center...');
+    debugPrint('Opening help center...');
   }
 
   void openPrivacySettings() {
     // Navigate to privacy settings
-    print('Opening privacy settings...');
+    debugPrint('Opening privacy settings...');
   }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 class VolumeService {
@@ -7,7 +8,7 @@ class VolumeService {
     try {
       await platform.invokeMethod('hideSystemUI');
     } catch (e) {
-      print('Error hiding system volume UI: $e');
+      debugPrint('Error hiding system volume UI: $e');
     }
   }
 }

@@ -1,6 +1,5 @@
-import 'package:app/views/video_player/video_player_page.dart';
+import 'package:app/services/user_api_service.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'dart:ui';
 import '../models/movies_model.dart';
 import 'cached_image.dart';
@@ -8,7 +7,7 @@ import '../core/theme/app_colors.dart';
 
 class MovieCard extends StatefulWidget {
   final Movie movie;
-  final VoidCallback onTap;
+
   final double? width;
   final double? height;
   final int index;
@@ -16,7 +15,7 @@ class MovieCard extends StatefulWidget {
   const MovieCard({
     super.key,
     required this.movie,
-    required this.onTap,
+
     this.width,
     this.height,
     this.index = 0,
@@ -81,11 +80,7 @@ class _MovieCardState extends State<MovieCard>
         child: ScaleTransition(
           scale: _scaleAnimation,
           child: GestureDetector(
-            onTap: () {
-              Get.to(
-                () => VideoPlayerPage(videoUrl: widget.movie.videoUrl ?? ''),
-              );
-            },
+            onTap: () => UserService().canWatchMovie(movie: widget.movie),
             child: SizedBox(
               width: widget.width,
               child: Column(

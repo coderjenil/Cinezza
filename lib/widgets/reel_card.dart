@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 
 class ReelCard extends StatelessWidget {
   final Map<String, dynamic> reel;
