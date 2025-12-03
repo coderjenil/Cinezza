@@ -4,7 +4,6 @@ import '../core/theme/app_colors.dart';
 import 'home/home_page.dart';
 import 'adult_content/adult_content_page.dart';
 import 'reels/reels_categories_screen.dart';
-import 'reels/reels_page.dart';
 import 'profile/profile_page.dart';
 
 class MainNavigation extends StatelessWidget {

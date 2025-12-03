@@ -1,18 +1,39 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
-import '../../controllers/profile_controller.dart';
+
 import '../../controllers/theme_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../controllers/splash_controller.dart';
 import '../premium/premium_plan_screen.dart';
 
-class ProfilePage extends StatelessWidget {
-  ProfilePage({super.key});
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
 
-  final ProfileController controller = Get.put(ProfileController());
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
   final ThemeController themeController = Get.find<ThemeController>();
+
+  final SplashController splashController = Get.find<SplashController>();
+  String version = 'Loading...';
+
+  @override
+  initState() {
+    super.initState();
+    _loadAppVersion();
+  }
+
+  _loadAppVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      version = packageInfo.version;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +94,14 @@ class ProfilePage extends StatelessWidget {
                 iconColor: const Color(0xFF0088cc),
                 title: 'Join Our Community',
                 subtitle: 'Connect with us on Telegram',
-                onTap: () => _launchURL('https://t.me/cinemaflix'),
+                onTap: () => _launchURL(
+                  splashController
+                          .remoteConfigModel
+                          .value
+                          ?.config
+                          .telegramUrl ??
+                      'https://t.me/',
+                ),
                 isDark: isDark,
                 showExternalIcon: true,
               ),
@@ -84,7 +112,14 @@ class ProfilePage extends StatelessWidget {
                 iconColor: const Color(0xFFE1306C),
                 title: 'Follow us on Instagram',
                 subtitle: '@CinemaFlix_App',
-                onTap: () => _launchURL('https://instagram.com/cinemaflix_app'),
+                onTap: () => _launchURL(
+                  splashController
+                          .remoteConfigModel
+                          .value
+                          ?.config
+                          .instagramUrl ??
+                      'https://instagram.com/',
+                ),
                 isDark: isDark,
                 showExternalIcon: true,
               ),
@@ -95,7 +130,14 @@ class ProfilePage extends StatelessWidget {
                 iconColor: const Color(0xFF1877F2),
                 title: 'Follow us on Facebook',
                 subtitle: '@CinemaFlix_App',
-                onTap: () => _launchURL('https://facebook.com/cinemaflix'),
+                onTap: () => _launchURL(
+                  splashController
+                          .remoteConfigModel
+                          .value
+                          ?.config
+                          .facebookUrl ??
+                      'https://facebook.com/',
+                ),
                 isDark: isDark,
                 showExternalIcon: true,
               ),
@@ -106,7 +148,14 @@ class ProfilePage extends StatelessWidget {
                 iconColor: const Color(0xFF8B5CF6),
                 title: 'Privacy Policy',
                 subtitle: 'Data & security',
-                onTap: () => _launchURL("https://facebook.com/cinemaflix"),
+                onTap: () => _launchURL(
+                  splashController
+                          .remoteConfigModel
+                          .value
+                          ?.config
+                          .privacyPolicyUrl ??
+                      "https://www.google.com",
+                ),
                 isDark: isDark,
               ),
 
@@ -138,7 +187,7 @@ class ProfilePage extends StatelessWidget {
                 icon: Icons.info_outline_rounded,
                 iconColor: const Color(0xFF3B82F6),
                 title: 'App Version',
-                subtitle: 'V1.0.2',
+                subtitle: 'V$version',
                 onTap: () => _showVersionDialog(context),
                 isDark: isDark,
               ),
@@ -151,8 +200,7 @@ class ProfilePage extends StatelessWidget {
     );
   }
 
-  // -------------------- PREMIUM CARD --------------------
-
+  // -------------------- PREMIUM CARD -------------------- //
   Widget _buildSubscriptionCard(BuildContext context) {
     final splash = Get.find<SplashController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -278,7 +326,6 @@ class ProfilePage extends StatelessWidget {
   }
 
   // -------------------- REUSABLES BELOW --------------------
-
   Widget _buildThemeToggle(BuildContext context, bool isDark) {
     return SliverToBoxAdapter(
       child: Padding(
@@ -347,9 +394,6 @@ class ProfilePage extends StatelessWidget {
   }
 
   // -----------------------------------------
-  // EXISTING METHODS BELOW (UNCHANGED)
-  // -----------------------------------------
-
   Widget _buildHeader(BuildContext context, bool isDark) {
     /* unchanged */
     return SliverAppBar(
@@ -521,9 +565,12 @@ class ProfilePage extends StatelessWidget {
   }
 
   // ------------------- Utilities -------------------
-
   void _handleRequestMovie(BuildContext context) {}
-  void _handleContactUs() => _launchURL("https://wa.me/1234567890");
+
+  void _handleContactUs() => _launchURL(
+    "https://wa.me/${splashController.remoteConfigModel.value?.config.contactUs ?? ''}",
+  );
+
   void _handleShareApp() =>
       Share.share("Download CinemaFlix: Best movie streaming app!");
 

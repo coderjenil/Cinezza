@@ -305,9 +305,10 @@ class _ReelsWebViewScreenState extends State<ReelsWebViewScreen>
           backgroundColor: Colors.transparent,
           flexibleSpace: Container(
             decoration: BoxDecoration(
-              gradient: isDark
-                  ? AppColors.darkPrimaryGradient
-                  : AppColors.lightPrimaryGradient,
+              color: Colors.black,
+              // gradient: isDark
+              //     ? AppColors.darkPrimaryGradient
+              //     : AppColors.lightPrimaryGradient,
             ),
           ),
           leading: IconButton(

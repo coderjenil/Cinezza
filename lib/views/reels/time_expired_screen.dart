@@ -1,6 +1,9 @@
 // time_expired_screen.dart
 
+import 'package:app/controllers/splash_controller.dart';
+import 'package:app/views/premium/premium_plan_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/user_model.dart';
 import '../../services/user_api_service.dart';
@@ -26,6 +29,8 @@ class _TimeExpiredScreenState extends State<TimeExpiredScreen> {
   // RewardedAd? _rewardedAd;
   bool _isAdLoading = false;
   bool _isProcessing = false; // Prevent double-tap
+
+  SplashController splashController = Get.find<SplashController>();
 
   @override
   void initState() {
@@ -110,8 +115,11 @@ class _TimeExpiredScreenState extends State<TimeExpiredScreen> {
 
   Future<void> _grantBonusTime() async {
     try {
-      int currentUsage = widget.user.reelsUsage ?? 0;
-      int newUsage = currentUsage + 300; // Add 5 minutes
+      int currentUsage = widget.user.reelsUsage;
+      int newUsage =
+          currentUsage +
+          (splashController.remoteConfigModel.value?.config.reelIncreaseTime ??
+              60);
 
       debugPrint('🎁 Granting bonus: $currentUsage -> $newUsage seconds');
       await UserService.updateUserByDeviceId(reelsUsage: newUsage);
@@ -331,7 +339,7 @@ class _TimeExpiredScreenState extends State<TimeExpiredScreen> {
                       onPressed: _isProcessing
                           ? null
                           : () {
-                              // TODO: Navigate to subscription screen
+                              Get.to(() => PremiumPlansPage());
                             },
                       icon: const Icon(
                         Icons.star_rounded,

@@ -2,7 +2,8 @@ import 'package:get/get.dart';
 
 class SearchController extends GetxController {
   final RxString searchQuery = ''.obs;
-  final RxList<Map<String, dynamic>> searchResults = <Map<String, dynamic>>[].obs;
+  final RxList<Map<String, dynamic>> searchResults =
+      <Map<String, dynamic>>[].obs;
   final RxBool isSearching = false.obs;
   final RxList<String> recentSearches = <String>[].obs;
 
@@ -23,10 +24,11 @@ class SearchController extends GetxController {
     Future.delayed(const Duration(milliseconds: 500), () {
       searchResults.value = List.generate(
         15,
-            (index) => {
+        (index) => {
           'id': 'search_$index',
           'title': '$query Result ${index + 1}',
-          'poster': 'https://via.placeholder.com/300x450/1A1F3A/00F0FF?text=Result+${index + 1}',
+          'poster':
+              'https://via.placeholder.com/300x450/1A1F3A/00F0FF?text=Result+${index + 1}',
           'rating': 7.0 + (index % 3) * 0.5,
           'year': 2024,
         },
