@@ -1760,3 +1760,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     return '${twoDigits(minutes)}:${twoDigits(seconds)}';
   }
 }
+
+
+

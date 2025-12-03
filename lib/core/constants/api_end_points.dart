@@ -7,6 +7,7 @@ class ApiEndPoints {
   static const String registerUserUrl = "${baseURL}users/register";
   static const String updateUserByDevice = "${baseURL}users/";
   static const String fetchPremiumPlans = "${baseURL}plans";
+  static const String fetchRemoteConfig = "${baseURL}remote-config";
 }
 
 class ApiHeaders {
