@@ -1,4 +1,5 @@
 import 'package:app/core/constants/api_end_points.dart';
+import 'package:app/models/remote_config_model.dart';
 import 'package:app/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -13,11 +14,11 @@ class SplashController extends GetxController {
   final RxString loadingMessage = 'Initializing...'.obs;
   final RxDouble progress = 0.0.obs;
   Rx<UserModel?> userModel = Rx<UserModel?>(null);
+  Rx<RemoteConfigModel?> remoteConfigModel = Rx<RemoteConfigModel?>(null);
   String? deviceId;
   bool get isPremium => userModel.value?.user.planActive == true;
 
   int get trialLeft => userModel.value?.user.trialCount ?? 0;
-
 
   @override
   void onInit() {
@@ -30,6 +31,7 @@ class SplashController extends GetxController {
       // Step 1: Get Device ID
       loadingMessage.value = 'Getting device info...';
       progress.value = 0.2;
+      await fetchConfig();
       await _getDeviceId();
       await Future.delayed(Duration(milliseconds: 500));
 
@@ -145,5 +147,27 @@ class SplashController extends GetxController {
     isLoading.value = true;
     progress.value = 0.0;
     _initializeApp();
+  }
+
+  fetchConfig() async {
+    try {
+      var res = await ApiCall.callService(
+        requestInfo: APIRequestInfoObj(
+          requestType: HTTPRequestType.get,
+          url: ApiEndPoints.fetchRemoteConfig,
+          headers: ApiHeaders.getHeaders(),
+          serviceName: 'Fetch Remote Config',
+          timeSecond: 30,
+        ),
+      );
+
+      remoteConfigModel.value = remoteConfigModelFromJson(res.body);
+
+      debugPrint(
+        'Remote Config: ${remoteConfigModel.value?.config?.appVersion}',
+      );
+    } catch (e) {
+      rethrow;
+    } finally {}
   }
 }

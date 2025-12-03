@@ -158,7 +158,7 @@ class ProfilePage extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final bool isPremium = splash.userModel.value?.user.planActive ?? false;
-    final int trialLeft = splash.userModel.value?.user.trialCount ?? 0;
+    int trialLeft = splash.userModel.value?.user.trialCount ?? 0;
     final String? expiryRaw = splash.userModel.value?.user.planExpiryDate;
 
     String expiryText = "";
@@ -173,104 +173,107 @@ class ProfilePage extends StatelessWidget {
     }
 
     return SliverToBoxAdapter(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        child: Container(
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(18),
-            gradient: isPremium
-                ? const LinearGradient(
-                    colors: [Color(0xFFFFD57E), Color(0xFFC89D0A)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  )
-                : null,
-            border: Border.all(
+      child: Obx(() {
+        trialLeft = splash.userModel.value?.user.trialCount ?? 0;
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          child: Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(18),
+              gradient: isPremium
+                  ? const LinearGradient(
+                      colors: [Color(0xFFFFD57E), Color(0xFFC89D0A)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    )
+                  : null,
+              border: Border.all(
+                color: isPremium
+                    ? Colors.amber.withOpacity(0.6)
+                    : Colors.grey.withOpacity(0.15),
+              ),
               color: isPremium
-                  ? Colors.amber.withOpacity(0.6)
-                  : Colors.grey.withOpacity(0.15),
+                  ? null
+                  : (isDark ? AppColors.darkCardBackground : Colors.white),
+              boxShadow: isPremium
+                  ? [
+                      BoxShadow(
+                        color: Colors.amber.withOpacity(0.4),
+                        blurRadius: 18,
+                        offset: const Offset(0, 6),
+                      ),
+                    ]
+                  : [],
             ),
-            color: isPremium
-                ? null
-                : (isDark ? AppColors.darkCardBackground : Colors.white),
-            boxShadow: isPremium
-                ? [
-                    BoxShadow(
-                      color: Colors.amber.withOpacity(0.4),
-                      blurRadius: 18,
-                      offset: const Offset(0, 6),
-                    ),
-                  ]
-                : [],
-          ),
-          child: Row(
-            children: [
-              Icon(
-                isPremium
-                    ? Icons.workspace_premium_rounded
-                    : Icons.lock_open_rounded,
-                color: isPremium ? Colors.black : Colors.grey,
-                size: 28,
-              ),
-              const SizedBox(width: 14),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isPremium ? "Premium Active" : "Free Trial Account",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 15,
-                        color: isPremium
-                            ? Colors.black
-                            : isDark
-                            ? Colors.white
-                            : Colors.black,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      isPremium
-                          ? expiryText
-                          : "Trial remaining: $trialLeft plays",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isPremium
-                            ? Colors.black.withOpacity(0.7)
-                            : Colors.grey,
-                      ),
-                    ),
-                  ],
+            child: Row(
+              children: [
+                Icon(
+                  isPremium
+                      ? Icons.workspace_premium_rounded
+                      : Icons.lock_open_rounded,
+                  color: isPremium ? Colors.black : Colors.grey,
+                  size: 28,
                 ),
-              ),
+                const SizedBox(width: 14),
 
-              // Button
-              ElevatedButton(
-                onPressed: () => Get.to(() => PremiumPlansPage()),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isPremium
-                      ? Colors.black
-                      : Get.theme.primaryColor,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 10,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isPremium ? "Premium Active" : "Free Trial Account",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                          color: isPremium
+                              ? Colors.black
+                              : isDark
+                              ? Colors.white
+                              : Colors.black,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isPremium
+                            ? expiryText
+                            : "Trial remaining: $trialLeft plays",
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: isPremium
+                              ? Colors.black.withOpacity(0.7)
+                              : Colors.grey,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Text(
-                  isPremium ? "Manage" : "Upgrade",
-                  style: const TextStyle(fontSize: 12, color: Colors.white),
+
+                // Button
+                ElevatedButton(
+                  onPressed: () => Get.to(() => PremiumPlansPage()),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: isPremium
+                        ? Colors.black
+                        : Get.theme.primaryColor,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  child: Text(
+                    isPremium ? "Manage" : "Upgrade",
+                    style: const TextStyle(fontSize: 12, color: Colors.white),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      }),
     );
   }
 
