@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:app/controllers/splash_controller.dart';
 import 'package:app/models/movies_model.dart';
+import 'package:app/services/ad.dart';
 import 'package:app/views/premium/premium_plan_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -72,6 +73,7 @@ class UserService {
   }
 
   void canWatchMovie({required Movie movie}) {
+
     final splash = Get.find<SplashController>();
     final user = splash.userModel.value?.user;
 
@@ -86,9 +88,19 @@ class UserService {
     final bool hasTrial = (user.trialCount) > 0;
 
     if (isPremium || hasTrial) {
-      Get.to(() => VideoPlayerPage(movie: movie));
+      AdService.showAdOnTap(
+        Get.context!,
+        onComplete: () {
+          Get.to(() => VideoPlayerPage(movie: movie));
+        },
+      );
     } else {
-      Get.to(() => PremiumPlansPage());
+      AdService.showAdOnTap(
+        Get.context!,
+        onComplete: () {
+          Get.to(() => PremiumPlansPage());
+        },
+      );
     }
   }
 }

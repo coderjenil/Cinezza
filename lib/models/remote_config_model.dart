@@ -33,6 +33,7 @@ class Config {
   int? defaultTrialCount;
   int? defaultReelsUsageLimit;
   bool? enableTrial;
+  bool? isAdEnable;
   String? appVersion;
   bool? maintenanceMode;
   Reels? reels;
@@ -42,6 +43,7 @@ class Config {
     this.defaultTrialCount,
     this.defaultReelsUsageLimit,
     this.enableTrial,
+    this.isAdEnable,
     this.appVersion,
     this.maintenanceMode,
     this.reels,
@@ -51,6 +53,7 @@ class Config {
   factory Config.fromJson(Map<String, dynamic> json) => Config(
     defaultTrialCount: json["default_trial_count"],
     defaultReelsUsageLimit: json["default_reels_usage_limit"],
+    isAdEnable: json["is_ads_enable"],
     enableTrial: json["enable_trial"],
     appVersion: json["app_version"],
     maintenanceMode: json["maintenance_mode"],
@@ -61,6 +64,7 @@ class Config {
   Map<String, dynamic> toJson() => {
     "default_trial_count": defaultTrialCount,
     "default_reels_usage_limit": defaultReelsUsageLimit,
+    "is_ads_enable": isAdEnable,
     "enable_trial": enableTrial,
     "app_version": appVersion,
     "maintenance_mode": maintenanceMode,

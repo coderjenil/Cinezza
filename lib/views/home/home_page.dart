@@ -1,5 +1,4 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
@@ -10,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../utils/common_dialogs.dart';
 import '../../widgets/auto_transition_widget.dart';
 import '../../widgets/category_movie_list_widget.dart';
+import '../../widgets/banner_ad_widget.dart'; // ADD THIS IMPORT
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,7 +20,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   final HomeController controller = Get.put(HomeController());
-  final ThemeController themeController = Get.find<ThemeController>();
+  final ThemeController themeController = Get.find();
   final ScrollController _scrollController = ScrollController();
   Timer? _autoScrollTimer;
 
@@ -53,7 +53,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
-
     final cardWidth = (screenWidth - 40) / 3.5;
     final cardHeight = cardWidth * 1.5;
     final titleHeight = 28.0;
@@ -76,7 +75,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 physics: const NeverScrollableScrollPhysics(),
                 slivers: [
                   _buildCompactAppBar(context, isDark),
-
                   SliverToBoxAdapter(
                     child: Shimmer.fromColors(
                       baseColor: isDark ? Colors.grey[850]! : Colors.grey[300]!,
@@ -87,7 +85,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       child: SizedBox(height: screenHeight * 0.22),
                     ),
                   ),
-
                   SliverToBoxAdapter(
                     child: _buildShimmerLoading(
                       context,
@@ -105,7 +102,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               physics: const BouncingScrollPhysics(),
               slivers: [
                 _buildCompactAppBar(context, isDark),
-                // Auto-Transition Banner (UNCHANGED)
+
+                // Auto-Transition Banner
                 SliverToBoxAdapter(
                   child: SizedBox(
                     height: screenHeight * 0.22,
@@ -116,21 +114,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   ),
                 ),
 
+                // Categories with Banner Ads
                 SliverToBoxAdapter(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: controller.nonAdultCategories.length,
-                    itemBuilder: (context, index) =>
-                        (controller.nonAdultCategories[index].name ==
-                            "Trending")
-                        ? const SizedBox()
-                        : CategoryMoviesList(
-                            category: controller.nonAdultCategories[index],
-                            icon: Icons.movie_filter_rounded,
-                            cardWidth: cardWidth,
-                            sectionHeight: totalSectionHeight,
-                          ),
+                  child: _buildCategoriesWithAds(
+                    cardWidth,
+                    totalSectionHeight,
                   ),
                 ),
 
@@ -143,12 +131,47 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
+  /// BUILD CATEGORIES WITH BANNER ADS EVERY 2 CATEGORIES
+  Widget _buildCategoriesWithAds(double cardWidth, double totalSectionHeight) {
+    final categories = controller.nonAdultCategories
+        .where((cat) => cat.name != "Trending")
+        .toList();
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: categories.length,
+      itemBuilder: (context, index) {
+        final category = categories[index];
+
+        return Column(
+          children: [
+            // Movie Category
+            CategoryMoviesList(
+              category: category,
+              icon: Icons.movie_filter_rounded,
+              cardWidth: cardWidth,
+              sectionHeight: totalSectionHeight,
+            ),
+
+            // Add Banner Ad after every 2nd category
+            if ((index + 1) % 2 == 0 && index < categories.length - 1)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: BannerAdWidget(),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildShimmerLoading(
-    BuildContext context,
-    bool isDark,
-    double cardWidth,
-    double sectionHeight,
-  ) {
+      BuildContext context,
+      bool isDark,
+      double cardWidth,
+      double sectionHeight,
+      ) {
     return Shimmer.fromColors(
       baseColor: isDark ? Colors.grey[850]! : Colors.grey[300]!,
       highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
@@ -255,13 +278,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           gradient: LinearGradient(
             colors: isDark
                 ? [
-                    AppColors.darkBackground,
-                    AppColors.darkBackground.withOpacity(0.95),
-                  ]
+              AppColors.darkBackground,
+              AppColors.darkBackground.withOpacity(0.95),
+            ]
                 : [
-                    AppColors.lightBackground,
-                    AppColors.lightBackground.withOpacity(0.95),
-                  ],
+              AppColors.lightBackground,
+              AppColors.lightBackground.withOpacity(0.95),
+            ],
           ),
         ),
         child: Padding(
@@ -299,17 +322,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               _buildCompactIconButton(
                 context,
                 Icons.search_rounded,
-                () => Get.toNamed(AppRoutes.premiumPlan),
+                    () => Get.toNamed(AppRoutes.premiumPlan),
                 isDark,
               ),
               const SizedBox(width: 8),
               Obx(
-                () => _buildCompactIconButton(
+                    () => _buildCompactIconButton(
                   context,
                   themeController.isDarkMode.value
                       ? Icons.light_mode_rounded
                       : Icons.dark_mode_rounded,
-                  () => themeController.toggleTheme(),
+                      () => themeController.toggleTheme(),
                   isDark,
                   isTheme: true,
                 ),
@@ -322,12 +345,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Widget _buildCompactIconButton(
-    BuildContext context,
-    IconData icon,
-    VoidCallback onTap,
-    bool isDark, {
-    bool isTheme = false,
-  }) {
+      BuildContext context,
+      IconData icon,
+      VoidCallback onTap,
+      bool isDark, {
+        bool isTheme = false,
+      }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
