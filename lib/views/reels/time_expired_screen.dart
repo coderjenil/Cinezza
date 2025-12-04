@@ -1,10 +1,12 @@
-// time_expired_screen.dart
+import 'package:app/controllers/splash_controller.dart';
 
+import 'package:app/services/user_api_service.dart';
+import 'package:app/views/premium/premium_plan_screen.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/user_model.dart';
-import '../../services/user_api_service.dart';
-// import 'package:google_mobile_ads/google_mobile_ads.dart';
+import '../../services/ad.dart';
 
 class TimeExpiredScreen extends StatefulWidget {
   final User user;
@@ -23,162 +25,49 @@ class TimeExpiredScreen extends StatefulWidget {
 }
 
 class _TimeExpiredScreenState extends State<TimeExpiredScreen> {
-  // RewardedAd? _rewardedAd;
-  bool _isAdLoading = false;
-  bool _isProcessing = false; // Prevent double-tap
+  bool _isProcessing = false;
+  bool _isLoadingAd = false;
 
-  @override
-  void initState() {
-    super.initState();
-    _loadRewardedAd();
-  }
+  SplashController splashController = Get.find<SplashController>();
 
-  @override
-  void dispose() {
-    // _rewardedAd?.dispose();
-    super.dispose();
-  }
-
-  void _loadRewardedAd() {
-    if (!mounted) return;
-
-    setState(() => _isAdLoading = true);
-
-    // TODO: Implement real ad loading
-    // RewardedAd.load(
-    //   adUnitId: 'YOUR_AD_UNIT_ID',
-    //   request: const AdRequest(),
-    //   rewardedAdLoadCallback: RewardedAdLoadCallback(
-    //     onAdLoaded: (ad) {
-    //       if (mounted) {
-    //         _rewardedAd = ad;
-    //         setState(() => _isAdLoading = false);
-    //       }
-    //     },
-    //     onAdFailedToLoad: (error) {
-    //       if (mounted) {
-    //         setState(() => _isAdLoading = false);
-    //         _showErrorDialog();
-    //       }
-    //     },
-    //   ),
-    // );
-
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) {
-        setState(() => _isAdLoading = false);
-      }
-    });
-  }
-
-  void _showRewardedAd() async {
+  Future<void> _showRewardedAd() async {
     if (_isProcessing) return;
 
-    setState(() => _isProcessing = true);
+    setState(() {
+      _isProcessing = true;
+      _isLoadingAd = true;
+    });
 
-    try {
-      // Demo implementation - grant bonus time
-      await _grantBonusTime();
-
-      // Call the callback to notify parent
-      if (mounted) {
+    await AdService().showRewarded(
+      context,
+      onReward: (ad, reward) async {
+        await _grantBonusTime();
         widget.onAdWatched();
-      }
-    } catch (e) {
-      debugPrint('❌ Error showing rewarded ad: $e');
-      if (mounted) {
-        setState(() => _isProcessing = false);
-        _showErrorDialog();
-      }
-    }
-
-    // TODO: Uncomment for real ads
-    // if (_rewardedAd != null) {
-    //   _rewardedAd!.show(
-    //     onUserEarnedReward: (ad, reward) async {
-    //       await _grantBonusTime();
-    //       if (mounted) {
-    //         widget.onAdWatched();
-    //       }
-    //     },
-    //   );
-    // } else {
-    //   setState(() => _isProcessing = false);
-    //   _showErrorDialog();
-    // }
+      },
+      onComplete: () {
+        setState(() {
+          _isProcessing = false;
+          _isLoadingAd = false;
+        });
+      },
+    );
   }
 
   Future<void> _grantBonusTime() async {
     try {
-      int currentUsage = widget.user.reelsUsage ?? 0;
-      int newUsage = currentUsage + 300; // Add 5 minutes
+      int currentUsage = widget.user.reelsUsage;
+      int newUsage =
+          currentUsage +
+          (splashController.remoteConfigModel.value?.config.reelIncreaseTime ??
+              60);
 
-      debugPrint('🎁 Granting bonus: $currentUsage -> $newUsage seconds');
+      debugPrint('🎁 Granting bonus: $currentUsage → $newUsage seconds');
+
       await UserService.updateUserByDeviceId(reelsUsage: newUsage);
     } catch (e) {
-      debugPrint('❌ Error granting bonus time: $e');
+      debugPrint('❌ Error granting bonus: $e');
       rethrow;
     }
-  }
-
-  void _showErrorDialog() {
-    if (!mounted) return;
-
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: isDark
-            ? AppColors.darkSurface
-            : AppColors.lightSurface,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          'Ad Not Available',
-          style: TextStyle(
-            color: isDark
-                ? AppColors.darkTextPrimary
-                : AppColors.lightTextPrimary,
-          ),
-        ),
-        content: Text(
-          'Unable to load ad. Please check your internet connection and try again.',
-          style: TextStyle(
-            color: isDark
-                ? AppColors.darkTextSecondary
-                : AppColors.lightTextSecondary,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: TextStyle(
-                color: isDark
-                    ? AppColors.darkTextTertiary
-                    : AppColors.lightTextSecondary,
-              ),
-            ),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: isDark
-                  ? AppColors.darkPrimary
-                  : AppColors.lightPrimary,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            onPressed: () {
-              Navigator.pop(context);
-              _loadRewardedAd();
-            },
-            child: const Text('Retry'),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
@@ -187,9 +76,7 @@ class _TimeExpiredScreenState extends State<TimeExpiredScreen> {
 
     return WillPopScope(
       onWillPop: () async {
-        if (!_isProcessing) {
-          widget.onGoBack();
-        }
+        if (!_isProcessing) widget.onGoBack();
         return false;
       },
       child: Scaffold(
@@ -220,9 +107,11 @@ class _TimeExpiredScreenState extends State<TimeExpiredScreen> {
                       size: 60,
                     ),
                   ),
+
                   const SizedBox(height: 30),
+
                   Text(
-                    'Time\'s Up!',
+                    "Time's Up!",
                     style: TextStyle(
                       color: isDark
                           ? AppColors.darkTextPrimary
@@ -231,9 +120,11 @@ class _TimeExpiredScreenState extends State<TimeExpiredScreen> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 12),
+
+                  const SizedBox(height: 10),
+
                   Text(
-                    'Your free reels session has ended.',
+                    'Watch an ad to unlock 5 extra minutes.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: isDark
@@ -242,122 +133,91 @@ class _TimeExpiredScreenState extends State<TimeExpiredScreen> {
                       fontSize: 16,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Watch an ad to get 5 more minutes!',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: isDark
-                          ? AppColors.darkTextTertiary
-                          : AppColors.lightTextSecondary,
-                      fontSize: 14,
-                    ),
-                  ),
+
                   const SizedBox(height: 40),
-                  Container(
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.warning, Color(0xFFF57C00)],
-                      ),
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 16,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                      onPressed: (_isAdLoading || _isProcessing)
-                          ? null
-                          : _showRewardedAd,
-                      icon: (_isAdLoading || _isProcessing)
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+
+                  /// WATCH AD BUTTON
+                  Obx(() {
+                    bool showAdButton =
+                        splashController
+                            .remoteConfigModel
+                            .value
+                            ?.config
+                            .isAdsEnable ??
+                        false;
+                    return !showAdButton
+                        ? SizedBox()
+                        : SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.warning,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(25),
                                 ),
                               ),
-                            )
-                          : const Icon(
-                              Icons.play_circle_outline_rounded,
-                              color: Colors.white,
-                              size: 20,
+                              onPressed: _isProcessing ? null : _showRewardedAd,
+                              child: _isLoadingAd
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation(
+                                          Colors.white,
+                                        ),
+                                      ),
+                                    )
+                                  : const Text(
+                                      'Watch Ad (+5 Min)',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.white,
+                                      ),
+                                    ),
                             ),
-                      label: Text(
-                        _isProcessing
-                            ? 'Processing...'
-                            : _isAdLoading
-                            ? 'Loading...'
-                            : 'Watch Ad (+5 Min)',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
+                          );
+                  }),
+
                   const SizedBox(height: 12),
-                  Container(
+
+                  /// UPGRADE BUTTON
+                  SizedBox(
                     width: double.infinity,
-                    decoration: BoxDecoration(
-                      gradient: isDark
-                          ? AppColors.darkPrimaryGradient
-                          : AppColors.lightPrimaryGradient,
-                      borderRadius: BorderRadius.circular(25),
-                    ),
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.transparent,
-                        shadowColor: Colors.transparent,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 24,
-                          vertical: 16,
-                        ),
+                        backgroundColor: isDark
+                            ? AppColors.darkPrimary
+                            : AppColors.lightPrimary,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(25),
                         ),
                       ),
                       onPressed: _isProcessing
                           ? null
-                          : () {
-                              // TODO: Navigate to subscription screen
-                            },
-                      icon: const Icon(
-                        Icons.star_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
+                          : () => Get.to(() => PremiumPlansPage()),
+                      icon: const Icon(Icons.star, color: Colors.white),
                       label: const Text(
-                        'Upgrade Premium',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        'Upgrade to Premium',
+                        style: TextStyle(color: Colors.white, fontSize: 16),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
+
+                  const SizedBox(height: 20),
+
                   TextButton(
                     onPressed: _isProcessing ? null : widget.onGoBack,
                     child: Text(
                       'Go Back',
                       style: TextStyle(
                         color: isDark
-                            ? AppColors.darkTextTertiary
+                            ? AppColors.darkTextSecondary
                             : AppColors.lightTextSecondary,
-                        fontSize: 14,
                       ),
                     ),
                   ),

@@ -3,24 +3,29 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-// import 'package:google_mobile_ads/google_mobile_ads.dart' show MobileAds;
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+
 import 'controllers/splash_controller.dart';
-import 'core/theme/app_themes.dart';
-import 'core/routes/app_routes.dart';
 import 'controllers/theme_controller.dart';
+import 'core/routes/app_routes.dart';
+import 'core/theme/app_themes.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize GetStorage
   await GetStorage.init();
-    // Initialize Google Mobile Ads
-  // MobileAds.instance.initialize();
+  // Initialize Google Mobile Ads
+  MobileAds.instance.initialize();
+
+
+
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+
   Get.put(SplashController());
   Get.put(PremiumController());
 

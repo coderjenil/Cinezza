@@ -1,13 +1,19 @@
+import 'dart:convert';
+
 import 'package:app/core/constants/api_end_points.dart';
 import 'package:app/models/remote_config_model.dart';
 import 'package:app/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../api/apsl_api_call.dart';
 import '../core/routes/app_routes.dart';
+import '../services/ad.dart';
 import '../utils/device_helper.dart';
+import '../utils/dialogs/maintenance_mode_dialog.dart';
+import '../utils/dialogs/ota_update_dialog.dart';
 
 class SplashController extends GetxController {
   final RxBool isLoading = true.obs;
@@ -19,6 +25,7 @@ class SplashController extends GetxController {
   bool get isPremium => userModel.value?.user.planActive == true;
 
   int get trialLeft => userModel.value?.user.trialCount ?? 0;
+  RxBool isNewUser = false.obs;
 
   @override
   void onInit() {
@@ -26,41 +33,157 @@ class SplashController extends GetxController {
     _initializeApp();
   }
 
+  PackageInfo? packageInfo;
+
   Future<void> _initializeApp() async {
     try {
-      // Step 1: Get Device ID
-      loadingMessage.value = 'Getting device info...';
+      // Step 1: Get Package Info
+      loadingMessage.value = 'Loading app info...';
+      progress.value = 0.1;
+      packageInfo = await PackageInfo.fromPlatform();
+      await Future.delayed(Duration(milliseconds: 300));
+
+      // Step 2: Fetch Remote Config
+      loadingMessage.value = 'Checking server status...';
       progress.value = 0.2;
       await fetchConfig();
+      AdService().setDelay(3);
+      await Future.delayed(Duration(milliseconds: 300));
+
+      // Step 3: Check Maintenance Mode
+      if (remoteConfigModel.value?.config.maintenanceMode == true) {
+        loadingMessage.value = 'Server under maintenance';
+        progress.value = 0.0;
+        await Future.delayed(Duration(milliseconds: 500));
+        _showMaintenanceDialog();
+        return;
+      }
+
+      // Step 4: Check Version Update
+      final updateRequired = await _checkForUpdate();
+      if (updateRequired != null &&
+          (remoteConfigModel.value?.config.forceUpdate ?? true)) {
+        loadingMessage.value = 'Update available';
+        progress.value = 0.0;
+        await Future.delayed(Duration(milliseconds: 500));
+        _showUpdateDialog(updateRequired);
+        return;
+      }
+
+      // Step 5: Get Device ID
+      loadingMessage.value = 'Getting device info...';
+      progress.value = 0.4;
       await _getDeviceId();
       await Future.delayed(Duration(milliseconds: 500));
 
-      // Step 2: Register User with Device ID
+      // Step 6: Register User
       loadingMessage.value = 'Registering device...';
-      progress.value = 0.5;
+      progress.value = 0.6;
       await _registerUser();
       await Future.delayed(Duration(milliseconds: 500));
 
-      // Step 3: Initialize Services
+      // Step 7: Initialize Services
       loadingMessage.value = 'Preparing app...';
-      progress.value = 0.8;
+      progress.value = 0.9;
       await _initializeServices();
       await Future.delayed(Duration(milliseconds: 500));
 
-      // Step 4: Complete
+      // Step 8: Complete
       loadingMessage.value = 'Ready!';
       progress.value = 1.0;
       await Future.delayed(Duration(milliseconds: 500));
 
-      // Navigate to main screen
       isLoading.value = false;
       Get.offAllNamed(AppRoutes.mainNavigation);
     } catch (e) {
       debugPrint('Error during initialization: $e');
-      // Navigate anyway after delay
-      await Future.delayed(Duration(seconds: 2));
-      Get.offAllNamed(AppRoutes.mainNavigation);
+
+      if (remoteConfigModel.value?.config.maintenanceMode == true) {
+        _showMaintenanceDialog();
+      } else {
+        await Future.delayed(Duration(seconds: 2));
+        Get.offAllNamed(AppRoutes.mainNavigation);
+      }
     }
+  }
+
+  Future<Map<String, dynamic>?> _checkForUpdate() async {
+    try {
+      if (packageInfo == null || remoteConfigModel.value == null) {
+        return null;
+      }
+
+      final currentVersion = packageInfo!.version;
+      final minVersion = remoteConfigModel.value!.config.minAppVersion;
+      final latestVersion = remoteConfigModel.value!.config.appVersion;
+      final downloadUrl = remoteConfigModel.value!.config.apkDownloadUrl;
+
+      debugPrint('Current Version: $currentVersion');
+      debugPrint('Min Required Version: $minVersion');
+      debugPrint('Latest Version: $latestVersion');
+
+      // Compare versions
+      final isForceUpdate = _isVersionLower(currentVersion, minVersion);
+      final isUpdateAvailable = _isVersionLower(currentVersion, latestVersion);
+
+      if (isForceUpdate) {
+        return {
+          'isForceUpdate': true,
+          'currentVersion': currentVersion,
+          'latestVersion': latestVersion,
+          'downloadUrl': downloadUrl,
+        };
+      } else if (isUpdateAvailable) {
+        return {
+          'isForceUpdate': false,
+          'currentVersion': currentVersion,
+          'latestVersion': latestVersion,
+          'downloadUrl': downloadUrl,
+        };
+      }
+
+      return null;
+    } catch (e) {
+      debugPrint('Error checking for update: $e');
+      return null;
+    }
+  }
+
+  bool _isVersionLower(String current, String target) {
+    final currentParts = current.split('.').map(int.parse).toList();
+    final targetParts = target.split('.').map(int.parse).toList();
+
+    for (int i = 0; i < 3; i++) {
+      final currentPart = i < currentParts.length ? currentParts[i] : 0;
+      final targetPart = i < targetParts.length ? targetParts[i] : 0;
+
+      if (currentPart < targetPart) return true;
+      if (currentPart > targetPart) return false;
+    }
+
+    return false;
+  }
+
+  void _showUpdateDialog(Map<String, dynamic> updateInfo) {
+    Get.dialog(
+      OTAUpdateDialog(
+        downloadUrl: updateInfo['downloadUrl'],
+        isForceUpdate: updateInfo['isForceUpdate'],
+      ),
+      barrierDismissible: !updateInfo['isForceUpdate'],
+      barrierColor: Colors.black87,
+    );
+  }
+
+  void _showMaintenanceDialog() {
+    Get.dialog(
+      MaintenanceModeDialog(
+        contactEmail: remoteConfigModel.value?.config.contactUs,
+        websiteUrl: remoteConfigModel.value?.config.webUrl,
+      ),
+      barrierDismissible: false,
+      barrierColor: Colors.black87,
+    );
   }
 
   Future<void> _getDeviceId() async {
@@ -78,13 +201,9 @@ class SplashController extends GetxController {
   }
 
   Future<void> _registerUser() async {
-    if (deviceId == null || deviceId!.isEmpty) {
-      debugPrint('Device ID is null or empty');
-      return;
-    }
+    if (deviceId == null || deviceId!.isEmpty) return;
 
     try {
-      // Method 1: Using your existing ApiCall service
       http.Response response = await ApiCall.callService(
         requestInfo: APIRequestInfoObj(
           requestType: HTTPRequestType.post,
@@ -96,17 +215,22 @@ class SplashController extends GetxController {
         ),
       );
 
-      // Parse response
       if (response.statusCode == 200) {
-        userModel.value = userModelFromJson(response.body);
+        final decoded = json.decode(response.body);
+        userModel.value = UserModel.fromJson(decoded);
 
+        final message = decoded["message"].toString().toLowerCase();
+
+        // Check new user logic
+        isNewUser.value = message.contains("registered");
+
+        // Subscription expiry logic
         if (userModel.value?.user.planExpiryDate != null) {
           final expiryDate = DateTime.tryParse(
-            userModel.value?.user.planExpiryDate ?? "",
+            userModel.value!.user.planExpiryDate!,
           );
 
           if (expiryDate != null && expiryDate.isBefore(DateTime.now())) {
-            /// 🛠 Update backend subscription status to inactive
             var res = await ApiCall.callService(
               requestInfo: APIRequestInfoObj(
                 requestType: HTTPRequestType.put,
@@ -118,22 +242,15 @@ class SplashController extends GetxController {
                   "plan_expiry_date": null,
                 },
                 serviceName: 'Expire Subscription',
-                timeSecond: 30,
               ),
             );
 
-            Get.find<SplashController>().userModel.value = userModelFromJson(
-              res.body,
-            );
+            userModel.value = userModelFromJson(res.body);
           }
         }
-      } else {
-        debugPrint('Register User Failed: ${response.statusCode}');
-        debugPrint('Response: ${response.body}');
       }
     } catch (e) {
       debugPrint('Error registering user: $e');
-      // Don't rethrow - continue app initialization even if registration fails
     }
   }
 
@@ -164,7 +281,7 @@ class SplashController extends GetxController {
       remoteConfigModel.value = remoteConfigModelFromJson(res.body);
 
       debugPrint(
-        'Remote Config: ${remoteConfigModel.value?.config?.appVersion}',
+        'Remote Config: ${remoteConfigModel.value?.config.appVersion}',
       );
     } catch (e) {
       rethrow;

@@ -1,4 +1,6 @@
-// remote_config_model.dart
+// To parse this JSON data, do
+//
+//     final remoteConfigModel = remoteConfigModelFromJson(jsonString);
 
 import 'dart:convert';
 
@@ -9,85 +11,134 @@ String remoteConfigModelToJson(RemoteConfigModel data) =>
     json.encode(data.toJson());
 
 class RemoteConfigModel {
-  bool? success;
-  String? message;
-  Config? config;
+  bool success;
+  String message;
+  Config config;
 
-  RemoteConfigModel({this.success, this.message, this.config});
+  RemoteConfigModel({
+    required this.success,
+    required this.message,
+    required this.config,
+  });
 
   factory RemoteConfigModel.fromJson(Map<String, dynamic> json) =>
       RemoteConfigModel(
         success: json["success"],
         message: json["message"],
-        config: json["data"] == null ? null : Config.fromJson(json["data"]),
+        config: Config.fromJson(json["data"]),
       );
 
   Map<String, dynamic> toJson() => {
     "success": success,
     "message": message,
-    "data": config?.toJson(),
+    "data": config.toJson(),
   };
 }
 
 class Config {
-  int? defaultTrialCount;
-  int? defaultReelsUsageLimit;
-  bool? enableTrial;
-  bool? isAdEnable;
-  String? appVersion;
-  bool? maintenanceMode;
-  Reels? reels;
-  AdIds? adIds;
+  int defaultTrialCount;
+  int defaultReelsUsageLimit;
+  bool enableTrial;
+  String appVersion;
+  bool maintenanceMode;
+  Reels reels;
+  AdIds adIds;
+  String contactUs;
+  String telegramUrl;
+  String instagramUrl;
+  String facebookUrl;
+  String privacyPolicyUrl;
+  String webUrl;
+  String minAppVersion;
+  bool isAdsEnable;
+  String apkDownloadUrl;
+  bool forceUpdate;
+  int reelIncreaseTime;
+  bool showMature;
 
   Config({
-    this.defaultTrialCount,
-    this.defaultReelsUsageLimit,
-    this.enableTrial,
-    this.isAdEnable,
-    this.appVersion,
-    this.maintenanceMode,
-    this.reels,
-    this.adIds,
+    required this.defaultTrialCount,
+    required this.defaultReelsUsageLimit,
+    required this.enableTrial,
+    required this.appVersion,
+    required this.maintenanceMode,
+    required this.reels,
+    required this.adIds,
+    required this.contactUs,
+    required this.telegramUrl,
+    required this.instagramUrl,
+    required this.facebookUrl,
+    required this.privacyPolicyUrl,
+    required this.webUrl,
+    required this.minAppVersion,
+    required this.isAdsEnable,
+    required this.apkDownloadUrl,
+    required this.forceUpdate,
+    required this.reelIncreaseTime,
+    required this.showMature,
   });
 
   factory Config.fromJson(Map<String, dynamic> json) => Config(
     defaultTrialCount: json["default_trial_count"],
     defaultReelsUsageLimit: json["default_reels_usage_limit"],
-    isAdEnable: json["is_ads_enable"],
     enableTrial: json["enable_trial"],
     appVersion: json["app_version"],
     maintenanceMode: json["maintenance_mode"],
-    reels: json["Reels"] == null ? null : Reels.fromJson(json["Reels"]),
-    adIds: json["ad_ids"] == null ? null : AdIds.fromJson(json["ad_ids"]),
+    reels: Reels.fromJson(json["Reels"]),
+    adIds: AdIds.fromJson(json["ad_ids"]),
+    contactUs: json["contact_us"],
+    telegramUrl: json["telegram_url"],
+    instagramUrl: json["instagram_url"],
+    facebookUrl: json["facebook_url"],
+    privacyPolicyUrl: json["privacy_policy_url"],
+    webUrl: json["web_url"],
+    minAppVersion: json["min_app_version"],
+    isAdsEnable: json["is_ads_enable"],
+    apkDownloadUrl: json["apk_download_url"],
+    forceUpdate: json["force_update"],
+    reelIncreaseTime: json["reel_view_increase_time"],
+    showMature: json["show_mature_content"],
   );
 
   Map<String, dynamic> toJson() => {
     "default_trial_count": defaultTrialCount,
     "default_reels_usage_limit": defaultReelsUsageLimit,
-    "is_ads_enable": isAdEnable,
+    
     "enable_trial": enableTrial,
     "app_version": appVersion,
     "maintenance_mode": maintenanceMode,
-    "Reels": reels?.toJson(),
-    "ad_ids": adIds?.toJson(),
+    "Reels": reels.toJson(),
+    "ad_ids": adIds.toJson(),
+    "contact_us": contactUs,
+    "telegram_url": telegramUrl,
+    "instagram_url": instagramUrl,
+    "facebook_url": facebookUrl,
+    "privacy_policy_url": privacyPolicyUrl,
+    "web_url": webUrl,
+    "min_app_version": minAppVersion,
+    "is_ads_enable": isAdsEnable,
+    "apk_download_url": apkDownloadUrl,
+    "force_update": forceUpdate,
+    "reel_view_increase_time": reelIncreaseTime,
+    "show_mature_content": showMature,
   };
 }
 
 class AdIds {
-  String? appOpen;
-  String? banner;
-  String? interstitial;
-  String? native;
-  String? rewarded;
-  String? rewardedInterstitial;
+  String appOpen;
+  String banner;
+  String interstitial;
+  String native;
+  String rewarded;
+  String rewardedInterstitial;
 
   AdIds({
-    this.appOpen,
-    this.banner,
-    this.interstitial,
-    this.native,
-    this.rewarded,
-    this.rewardedInterstitial,
+    required this.appOpen,
+    required this.banner,
+    required this.interstitial,
+    required this.native,
+    required this.rewarded,
+    required this.rewardedInterstitial,
   });
 
   factory AdIds.fromJson(Map<String, dynamic> json) => AdIds(

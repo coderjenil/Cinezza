@@ -1,15 +1,19 @@
 import 'dart:async';
+
+import 'package:app/controllers/splash_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
+
 import '../../controllers/home_controller.dart';
 import '../../controllers/theme_controller.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_colors.dart';
-import '../../utils/common_dialogs.dart';
+import '../../utils/dialogs/first_time_credit_dialog.dart';
+import '../../utils/dialogs/show_aleart.dart';
 import '../../widgets/auto_transition_widget.dart';
-import '../../widgets/category_movie_list_widget.dart';
 import '../../widgets/banner_ad_widget.dart'; // ADD THIS IMPORT
+import '../../widgets/category_movie_list_widget.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,6 +26,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   final HomeController controller = Get.put(HomeController());
   final ThemeController themeController = Get.find();
   final ScrollController _scrollController = ScrollController();
+  final SplashController splashController = Get.find<SplashController>();
   Timer? _autoScrollTimer;
 
   @override
@@ -33,7 +38,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   fetchCategories() async {
     try {
       controller.isLoading.value = true;
+
       await controller.fetchAllCategories();
+      // Show dialog only if new user AND has credits
+      // if (splashController.isNewUser.value) {
+      showDialog(
+        context: Get.context!,
+        barrierDismissible: false,
+        builder: (_) => ModernCreditDialog(
+          credits: splashController.userModel.value!.user.trialCount,
+          onContinue: () {
+            Get.back();
+          },
+        ),
+      );
+      // }
     } catch (e) {
       showAlert(context: context, message: e);
     } finally {
@@ -116,10 +135,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
                 // Categories with Banner Ads
                 SliverToBoxAdapter(
-                  child: _buildCategoriesWithAds(
-                    cardWidth,
-                    totalSectionHeight,
-                  ),
+                  child: _buildCategoriesWithAds(cardWidth, totalSectionHeight),
                 ),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 20)),
@@ -167,11 +183,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Widget _buildShimmerLoading(
-      BuildContext context,
-      bool isDark,
-      double cardWidth,
-      double sectionHeight,
-      ) {
+    BuildContext context,
+    bool isDark,
+    double cardWidth,
+    double sectionHeight,
+  ) {
     return Shimmer.fromColors(
       baseColor: isDark ? Colors.grey[850]! : Colors.grey[300]!,
       highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
@@ -278,13 +294,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           gradient: LinearGradient(
             colors: isDark
                 ? [
-              AppColors.darkBackground,
-              AppColors.darkBackground.withOpacity(0.95),
-            ]
+                    AppColors.darkBackground,
+                    AppColors.darkBackground.withOpacity(0.95),
+                  ]
                 : [
-              AppColors.lightBackground,
-              AppColors.lightBackground.withOpacity(0.95),
-            ],
+                    AppColors.lightBackground,
+                    AppColors.lightBackground.withOpacity(0.95),
+                  ],
           ),
         ),
         child: Padding(
@@ -322,17 +338,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               _buildCompactIconButton(
                 context,
                 Icons.search_rounded,
-                    () => Get.toNamed(AppRoutes.premiumPlan),
+                () => Get.toNamed(AppRoutes.search),
                 isDark,
               ),
               const SizedBox(width: 8),
               Obx(
-                    () => _buildCompactIconButton(
+                () => _buildCompactIconButton(
                   context,
                   themeController.isDarkMode.value
                       ? Icons.light_mode_rounded
                       : Icons.dark_mode_rounded,
-                      () => themeController.toggleTheme(),
+                  () => themeController.toggleTheme(),
                   isDark,
                   isTheme: true,
                 ),
@@ -345,12 +361,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Widget _buildCompactIconButton(
-      BuildContext context,
-      IconData icon,
-      VoidCallback onTap,
-      bool isDark, {
-        bool isTheme = false,
-      }) {
+    BuildContext context,
+    IconData icon,
+    VoidCallback onTap,
+    bool isDark, {
+    bool isTheme = false,
+  }) {
     return GestureDetector(
       onTap: onTap,
       child: Container(

@@ -5,6 +5,7 @@
 list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
   flutter_volume_controller
+  permission_handler_windows
   screen_brightness_windows
   share_plus
   url_launcher_windows

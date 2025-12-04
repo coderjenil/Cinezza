@@ -1,16 +1,13 @@
+import 'dart:io';
+import 'package:app/controllers/splash_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import '../controllers/splash_controller.dart';
 import 'CommonShimmer.dart';
 
 class BannerAdWidget extends StatefulWidget {
   final bool forceShow;
-
-  const BannerAdWidget({
-    Key? key, // ✅ Add Key parameter
-    this.forceShow = false,
-  }) : super(key: key);
+  const BannerAdWidget({super.key, this.forceShow = false});
 
   @override
   State<BannerAdWidget> createState() => _BannerAdWidgetState();
@@ -19,8 +16,8 @@ class BannerAdWidget extends StatefulWidget {
 class _BannerAdWidgetState extends State<BannerAdWidget>
     with AutomaticKeepAliveClientMixin {
   BannerAd? _bannerAd;
-  bool _isBannerAdLoaded = false;
-  bool _isDisposed = false;
+  bool _isBannerLoaded = false;
+  bool _disposed = false;
 
   @override
   bool get wantKeepAlive => true;
@@ -28,46 +25,42 @@ class _BannerAdWidgetState extends State<BannerAdWidget>
   @override
   void initState() {
     super.initState();
-    _loadBannerAd();
+    _loadBanner();
   }
 
-  void _loadBannerAd() {
-    if (_isDisposed) return;
+  void _loadBanner() {
+    if (_disposed) return;
 
-    SplashController splashController = Get.find<SplashController>();
+    final splash = Get.find<SplashController>();
+    final remoteId = splash.remoteConfigModel.value?.config.adIds.banner ?? "";
+
+    final adUnit = remoteId.isNotEmpty
+        ? remoteId
+        : Platform.isAndroid
+        ? "ca-app-pub-3940256099942544/6300978111"
+        : "ca-app-pub-3940256099942544/2934735716";
 
     _bannerAd = BannerAd(
-      // adUnitId: splashController.remoteConfigModel.value?.config?.adIds?.banner??"",
-      adUnitId: "ca-app-pub-3940256099942544/6300978111",
+      adUnitId: adUnit,
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) {
-          if (!_isDisposed && mounted) {
-            setState(() {
-              _isBannerAdLoaded = true;
-            });
-            print('✅ Banner Ad loaded: ${ad.hashCode}');
-          }
+          if (_disposed || !mounted) return;
+          setState(() => _isBannerLoaded = true);
+          debugPrint("🎉 Banner Ad Loaded: ${ad.hashCode}");
         },
-        onAdFailedToLoad: (ad, error) {
-          print('❌ Banner Ad failed: $error');
-          ad.dispose();
-          if (!_isDisposed && mounted) {
-            setState(() {
-              _isBannerAdLoaded = false;
-            });
-          }
+        onAdFailedToLoad: (_, error) {
+          debugPrint("❌ Banner Ad Failed: $error");
+          if (!_disposed) setState(() => _isBannerLoaded = false);
         },
       ),
-    );
-
-    _bannerAd!.load();
+    )..load();
   }
 
   @override
   void dispose() {
-    _isDisposed = true;
+    _disposed = true;
     _bannerAd?.dispose();
     super.dispose();
   }
@@ -76,61 +69,41 @@ class _BannerAdWidgetState extends State<BannerAdWidget>
   Widget build(BuildContext context) {
     super.build(context);
 
-    return Builder(
-      builder: (context) {
-        if (widget.forceShow) {
-          if (_isBannerAdLoaded && _bannerAd != null) {
-            return Container(
-              alignment: Alignment.center,
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: SizedBox(
-                width: _bannerAd!.size.width.toDouble(),
-                height: _bannerAd!.size.height.toDouble(),
-                child: AdWidget(ad: _bannerAd!),
-              ),
-            );
-          }
-          return _buildShimmer();
-        }
+    // 👉 Force show is useful for testing banners in layouts
+    if (widget.forceShow) {
+      return _isBannerLoaded ? _bannerBox() : _loadingShimmer();
+    }
 
-        SplashController splashController = Get.find<SplashController>();
-        final isUserPremium = splashController.remoteConfigModel.value?.config?.enableTrial ?? false;
-        final shouldShowAds = splashController.remoteConfigModel.value?.config?.isAdEnable ?? false;
+    final splash = Get.find<SplashController>();
 
-        if (!shouldShowAds || isUserPremium) {
-          return const SizedBox.shrink();
-        }
+    final adsEnabled =
+        splash.remoteConfigModel.value?.config.isAdsEnable ?? true;
+    final isPremium = splash.userModel.value?.user.planActive ?? false;
 
-        if (_isBannerAdLoaded && _bannerAd != null) {
-          return Container(
-            alignment: Alignment.center,
-            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: SizedBox(
-              width: _bannerAd!.size.width.toDouble(),
-              height: _bannerAd!.size.height.toDouble(),
-              child: AdWidget(ad: _bannerAd!),
-            ),
-          );
-        }
+    if (!adsEnabled || isPremium) {
+      return const SizedBox.shrink();
+    }
 
-        return _buildShimmer();
-      },
+    return _isBannerLoaded ? _bannerBox() : _loadingShimmer();
+  }
+
+  Widget _bannerBox() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      height: 60, // 👈 ensures visibility inside list layouts
+      alignment: Alignment.center,
+      child: AdWidget(ad: _bannerAd!),
     );
   }
 
-  CommonShimmer _buildShimmer() {
+  Widget _loadingShimmer() {
     return CommonShimmer(
-      colorOpacity: 0.4,
+      colorOpacity: 0.3,
       child: Container(
+        height: 60,
         margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        height: 50,
-        width: double.infinity,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFFffffff), Color(0xFFffffff)],
-          ),
+          color: Colors.grey.shade300,
           borderRadius: BorderRadius.circular(12),
         ),
       ),
