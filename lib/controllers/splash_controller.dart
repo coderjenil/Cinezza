@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:app/core/constants/api_end_points.dart';
 import 'package:app/models/remote_config_model.dart';
 import 'package:app/models/user_model.dart';
@@ -8,8 +10,10 @@ import 'package:package_info_plus/package_info_plus.dart';
 
 import '../api/apsl_api_call.dart';
 import '../core/routes/app_routes.dart';
-import '../utils/common_dialogs.dart';
+import '../services/ad.dart';
 import '../utils/device_helper.dart';
+import '../utils/dialogs/maintenance_mode_dialog.dart';
+import '../utils/dialogs/ota_update_dialog.dart';
 
 class SplashController extends GetxController {
   final RxBool isLoading = true.obs;
@@ -21,6 +25,7 @@ class SplashController extends GetxController {
   bool get isPremium => userModel.value?.user.planActive == true;
 
   int get trialLeft => userModel.value?.user.trialCount ?? 0;
+  RxBool isNewUser = false.obs;
 
   @override
   void onInit() {
@@ -42,6 +47,7 @@ class SplashController extends GetxController {
       loadingMessage.value = 'Checking server status...';
       progress.value = 0.2;
       await fetchConfig();
+      AdService().setDelay(3);
       await Future.delayed(Duration(milliseconds: 300));
 
       // Step 3: Check Maintenance Mode
@@ -195,13 +201,9 @@ class SplashController extends GetxController {
   }
 
   Future<void> _registerUser() async {
-    if (deviceId == null || deviceId!.isEmpty) {
-      debugPrint('Device ID is null or empty');
-      return;
-    }
+    if (deviceId == null || deviceId!.isEmpty) return;
 
     try {
-      // Method 1: Using your existing ApiCall service
       http.Response response = await ApiCall.callService(
         requestInfo: APIRequestInfoObj(
           requestType: HTTPRequestType.post,
@@ -213,17 +215,22 @@ class SplashController extends GetxController {
         ),
       );
 
-      // Parse response
       if (response.statusCode == 200) {
-        userModel.value = userModelFromJson(response.body);
+        final decoded = json.decode(response.body);
+        userModel.value = UserModel.fromJson(decoded);
 
+        final message = decoded["message"].toString().toLowerCase();
+
+        // Check new user logic
+        isNewUser.value = message.contains("registered");
+
+        // Subscription expiry logic
         if (userModel.value?.user.planExpiryDate != null) {
           final expiryDate = DateTime.tryParse(
-            userModel.value?.user.planExpiryDate ?? "",
+            userModel.value!.user.planExpiryDate!,
           );
 
           if (expiryDate != null && expiryDate.isBefore(DateTime.now())) {
-            /// 🛠 Update backend subscription status to inactive
             var res = await ApiCall.callService(
               requestInfo: APIRequestInfoObj(
                 requestType: HTTPRequestType.put,
@@ -235,22 +242,15 @@ class SplashController extends GetxController {
                   "plan_expiry_date": null,
                 },
                 serviceName: 'Expire Subscription',
-                timeSecond: 30,
               ),
             );
 
-            Get.find<SplashController>().userModel.value = userModelFromJson(
-              res.body,
-            );
+            userModel.value = userModelFromJson(res.body);
           }
         }
-      } else {
-        debugPrint('Register User Failed: ${response.statusCode}');
-        debugPrint('Response: ${response.body}');
       }
     } catch (e) {
       debugPrint('Error registering user: $e');
-      // Don't rethrow - continue app initialization even if registration fails
     }
   }
 

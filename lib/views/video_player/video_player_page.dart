@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:app/models/movies_model.dart';
+import 'package:app/services/ad.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -475,11 +476,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           child: Column(
             children: [
               _buildVideoPlayerSection(),
-              Expanded(
-                child: SingleChildScrollView(
-                  child: _buildDetailsSection(isDark),
-                ),
-              ),
+              Expanded(child: _buildDetailsSection(isDark)),
             ],
           ),
         ),
@@ -607,33 +604,34 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     final hasSeasons =
         widget.movie.seasons != null && widget.movie.seasons!.isNotEmpty;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        if (hasSeasons) ...[
-          // Episodes card
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF16161A) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                if (!isDark)
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    offset: const Offset(0, 6),
-                    blurRadius: 14,
+    return hasSeasons
+        ? SingleChildScrollView(
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
                   ),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF16161A) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      if (!isDark)
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          offset: const Offset(0, 6),
+                          blurRadius: 14,
+                        ),
+                    ],
+                  ),
+                  child: _buildEpisodeSelector(isDark),
+                ),
               ],
             ),
-            child: _buildEpisodeSelector(isDark),
-          ),
-        ],
-
-        const SizedBox(height: 8),
-      ],
-    );
+          )
+        : AdService().native();
   }
 
   Widget _buildEpisodeSelector(bool isDark) {
@@ -1760,6 +1758,3 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     return '${twoDigits(minutes)}:${twoDigits(seconds)}';
   }
 }
-
-
-

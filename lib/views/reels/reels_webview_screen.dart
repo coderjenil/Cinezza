@@ -1,7 +1,9 @@
 // reels_webview_screen.dart
 
 import 'dart:async';
+import 'package:app/controllers/splash_controller.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../core/theme/app_colors.dart';
 import '../../models/remote_config_model.dart';
@@ -35,10 +37,8 @@ class _ReelsWebViewScreenState extends State<ReelsWebViewScreen>
   Timer? _countdownTimer;
   Timer? _syncTimer;
 
-  // 🔥 ACCURATE TIME TRACKING
   int _remainingSeconds = 0;
   int _initialSeconds = 0;
-  DateTime? _sessionStartTime;
   bool _isPremium = false;
 
   @override
@@ -46,18 +46,15 @@ class _ReelsWebViewScreenState extends State<ReelsWebViewScreen>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
 
-    _isPremium = widget.user.planActive ?? false;
-    _initialSeconds = widget.user.reelsUsage ?? 0;
+    _isPremium = widget.user.planActive;
+    _initialSeconds = widget.user.reelsUsage;
     _remainingSeconds = _initialSeconds;
-    _sessionStartTime = DateTime.now();
-
-    debugPrint('🎬 Session started with $_remainingSeconds seconds');
 
     _initializeWebView();
 
     if (!_isPremium) {
       _startTimer();
-      _startPeriodicSync(); // Sync every 30 seconds
+      _startPeriodicSync();
     }
   }
 
@@ -70,22 +67,25 @@ class _ReelsWebViewScreenState extends State<ReelsWebViewScreen>
     if (!_isPremium) {
       _saveTimerBeforeExit();
     }
+
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!_isPremium) {
-      if (state == AppLifecycleState.paused ||
-          state == AppLifecycleState.inactive) {
-        debugPrint('⏸️ App paused - saving state');
-        _pauseTimer();
-      } else if (state == AppLifecycleState.resumed) {
-        debugPrint('▶️ App resumed - resuming timer');
-        _resumeTimer();
-      }
+  // ------------------------ PAUSE WEBVIEW SOUND ------------------------
+
+  Future<void> _pauseWebMedia() async {
+    try {
+      await _controller.runJavaScript("""
+        document.querySelectorAll('video').forEach(v => { try { v.pause(); v.muted = true; } catch(e){} });
+        document.querySelectorAll('audio').forEach(a => { try { a.pause(); a.muted = true; } catch(e){} });
+      """);
+      debugPrint("⏸️ WebView media paused");
+    } catch (e) {
+      debugPrint("❌ Error pausing web media: $e");
     }
   }
+
+  // ------------------------ WEBVIEW SETUP ------------------------
 
   void _initializeWebView() {
     _controller = WebViewController()
@@ -93,45 +93,22 @@ class _ReelsWebViewScreenState extends State<ReelsWebViewScreen>
       ..setBackgroundColor(AppColors.darkBackground)
       ..setNavigationDelegate(
         NavigationDelegate(
-          onPageStarted: (url) {
-            if (mounted) {
-              setState(() => _loadingPercentage = 0);
-            }
-          },
-          onProgress: (progress) {
-            if (mounted) {
-              setState(() => _loadingPercentage = progress);
-            }
-          },
-          onPageFinished: (url) {
-            if (mounted) {
-              setState(() => _loadingPercentage = 100);
-            }
-          },
+          onPageStarted: (_) => setState(() => _loadingPercentage = 0),
+          onProgress: (progress) =>
+              setState(() => _loadingPercentage = progress),
+          onPageFinished: (_) => setState(() => _loadingPercentage = 100),
         ),
       )
       ..loadRequest(Uri.parse(widget.url));
   }
 
-  // 🔥 ACCURATE TIMER
-  void _startTimer() {
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_remainingSeconds > 0) {
-        if (mounted) {
-          setState(() {
-            _remainingSeconds--;
-          });
-        }
+  // ------------------------ TIMER SYSTEM ------------------------
 
-        // Log every 10 seconds
-        if (_remainingSeconds % 10 == 0) {
-          final elapsed = _initialSeconds - _remainingSeconds;
-          debugPrint(
-            '⏱️ Watched: $elapsed sec | Remaining: $_remainingSeconds sec',
-          );
-        }
+  void _startTimer() {
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (_remainingSeconds > 0) {
+        setState(() => _remainingSeconds--);
       } else {
-        debugPrint('⏰ Time expired!');
         _stopTimer();
         _showTimeExpiredScreen();
       }
@@ -141,15 +118,6 @@ class _ReelsWebViewScreenState extends State<ReelsWebViewScreen>
   void _stopTimer() {
     _countdownTimer?.cancel();
     _countdownTimer = null;
-  }
-
-  // 🔥 PERIODIC SYNC (Every 30 seconds)
-  void _startPeriodicSync() {
-    _syncTimer = Timer.periodic(const Duration(seconds: 30), (timer) {
-      if (!_isPremium && mounted) {
-        _syncUsageToBackend();
-      }
-    });
   }
 
   void _pauseTimer() async {
@@ -165,123 +133,107 @@ class _ReelsWebViewScreenState extends State<ReelsWebViewScreen>
     }
   }
 
-  // 🔥 SAVE AND SYNC
+  void _startPeriodicSync() {
+    _syncTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (!_isPremium) _syncUsageToBackend();
+    });
+  }
+
   Future<void> _saveAndSyncUsage() async {
     await ReelsTimerHelper.saveRemainingTime(_remainingSeconds);
     await _syncUsageToBackend();
   }
 
+  Future<void> _syncUsageToBackend() async {
+    try {
+      await UserService.updateUserByDeviceId(reelsUsage: _remainingSeconds);
+    } catch (_) {}
+  }
+
   Future<void> _saveTimerBeforeExit() async {
-    debugPrint('💾 Saving before exit: $_remainingSeconds seconds');
     await _saveAndSyncUsage();
   }
 
-  // 🔥 SYNC TO BACKEND
-  Future<void> _syncUsageToBackend() async {
-    try {
-      debugPrint('📤 Syncing to backend: $_remainingSeconds seconds');
-
-      await UserService.updateUserByDeviceId(reelsUsage: _remainingSeconds);
-    } catch (e) {
-      debugPrint('❌ Error syncing to backend: $e');
-    }
-  }
-
-  // Replace the _showTimeExpiredScreen function in reels_webview_screen.dart
+  // ------------------------ TIME EXPIRED HANDLER ------------------------
 
   void _showTimeExpiredScreen() async {
-    // Stop timers before navigation
     _stopTimer();
     _syncTimer?.cancel();
-
     await _syncUsageToBackend();
+
+    // 🔇 Pause sound BEFORE navigating
+    await _pauseWebMedia();
 
     if (!mounted) return;
 
-    // 🔥 USE PUSH INSTEAD OF PUSH_REPLACEMENT
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => TimeExpiredScreen(
+        builder: (_) => TimeExpiredScreen(
           user: widget.user,
-          onAdWatched: () async {
-            // This returns true to indicate ad was watched
-            Navigator.pop(context, true);
-          },
-          onGoBack: () {
-            // This returns false or null
-            Navigator.pop(context, false);
-          },
+          onAdWatched: () async => Navigator.pop(context, true),
+          onGoBack: () => Navigator.pop(context, false),
         ),
       ),
     );
 
-    // Handle the result after returning from TimeExpiredScreen
     if (!mounted) return;
 
     if (result == true) {
-      // Ad was watched - grant bonus time
+      // User watched rewarded ad → grant time
       setState(() {
-        _remainingSeconds += 300;
+        _remainingSeconds +=
+            Get.find<SplashController>()
+                .remoteConfigModel
+                .value
+                ?.config
+                .reelIncreaseTime ??
+            60;
+
         _initialSeconds = _remainingSeconds;
       });
-
-      debugPrint(
-        '🎁 Bonus time granted: +300 seconds. New total: $_remainingSeconds',
-      );
 
       await ReelsTimerHelper.saveRemainingTime(_remainingSeconds);
       await _syncUsageToBackend();
 
-      // Restart timer
       _startTimer();
       _startPeriodicSync();
 
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle_rounded, color: Colors.white),
-                SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    '🎉 +5 minutes added! Continue watching.',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: AppColors.success,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text("🎉 +5 min added! Enjoy watching."),
+          backgroundColor: AppColors.success,
+        ),
+      );
     } else {
-      // User chose to go back - exit the screen
-      if (mounted) {
-        Navigator.pop(context);
-      }
+      Navigator.pop(context);
     }
   }
 
-  String _formatTime(int seconds) {
-    final hours = seconds ~/ 3600;
-    final minutes = (seconds % 3600) ~/ 60;
-    final secs = seconds % 60;
+  // ------------------------ LIFECYCLE ------------------------
 
-    if (hours > 0) return '${hours}h ${minutes}m ${secs}s';
-    return '${minutes}m ${secs}s';
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_isPremium) return;
+
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      _pauseWebMedia();
+      _pauseTimer();
+    } else if (state == AppLifecycleState.resumed) {
+      _resumeTimer();
+    }
   }
 
-  Color _getTimerColor() {
+  // ------------------------ UI ------------------------
+
+  String _formatTime(int seconds) {
+    final m = seconds ~/ 60;
+    final s = seconds % 60;
+    return '${m}m ${s}s';
+  }
+
+  Color _timerColor() {
     if (_remainingSeconds < 60) return AppColors.error;
     if (_remainingSeconds < 300) return AppColors.warning;
     return AppColors.success;
@@ -289,142 +241,48 @@ class _ReelsWebViewScreenState extends State<ReelsWebViewScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return PopScope(
-      canPop: true,
-      onPopInvokedWithResult: (didPop, result) async {
-        if (didPop && !_isPremium) {
-          await _saveTimerBeforeExit();
-        }
-      },
-      child: Scaffold(
-        backgroundColor: AppColors.darkBackground,
-        appBar: AppBar(
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          flexibleSpace: Container(
-            decoration: BoxDecoration(
-              color: Colors.black,
-              // gradient: isDark
-              //     ? AppColors.darkPrimaryGradient
-              //     : AppColors.lightPrimaryGradient,
-            ),
-          ),
-          leading: IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Icon(
-                Icons.arrow_back,
-                color: Colors.white,
-                size: 20,
-              ),
-            ),
-            onPressed: () => Navigator.pop(context),
-          ),
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                widget.categoryName,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              if (!_isPremium)
-                Text(
-                  'Time remaining',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w400,
-                  ),
-                ),
-            ],
-          ),
-          actions: [
+    return Scaffold(
+      backgroundColor: AppColors.darkBackground,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        title: Row(
+          children: [
+            Text(widget.categoryName),
+            Spacer(),
             if (!_isPremium)
               Padding(
-                padding: const EdgeInsets.only(right: 12, top: 8, bottom: 8),
+                padding: const EdgeInsets.only(left: 12),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 8,
+                    horizontal: 10,
+                    vertical: 5,
                   ),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        _getTimerColor(),
-                        _getTimerColor().withOpacity(0.8),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: _getTimerColor().withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
+                    color: _timerColor(),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _remainingSeconds < 60
-                            ? Icons.timer_off_rounded
-                            : Icons.access_time_rounded,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        _formatTime(_remainingSeconds),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
-        ),
-        body: Stack(
-          children: [
-            WebViewWidget(controller: _controller),
-            if (_loadingPercentage < 100)
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                child: Container(
-                  height: 3,
-                  decoration: BoxDecoration(
-                    gradient: isDark
-                        ? AppColors.darkPrimaryGradient
-                        : AppColors.lightPrimaryGradient,
-                  ),
-                  child: LinearProgressIndicator(
-                    value: _loadingPercentage / 100.0,
-                    backgroundColor: Colors.transparent,
-                    valueColor: const AlwaysStoppedAnimation<Color>(
-                      Colors.white,
+                  child: Text(
+                    _formatTime(_remainingSeconds),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ),
           ],
         ),
+      ),
+      body: Stack(
+        children: [
+          WebViewWidget(controller: _controller),
+          if (_loadingPercentage < 100)
+            LinearProgressIndicator(
+              value: _loadingPercentage / 100,
+              backgroundColor: Colors.black,
+              valueColor: const AlwaysStoppedAnimation(Colors.white),
+            ),
+        ],
       ),
     );
   }

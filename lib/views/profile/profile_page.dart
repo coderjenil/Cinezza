@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 
+import '../../controllers/splash_controller.dart';
 import '../../controllers/theme_controller.dart';
 import '../../core/theme/app_colors.dart';
-import '../../controllers/splash_controller.dart';
+import '../../utils/dialogs/copy_right_dialog.dart';
+import '../../utils/dialogs/request_movie_dialog.dart';
 import '../premium/premium_plan_screen.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -84,7 +86,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 iconColor: const Color(0xFF10B981),
                 title: 'Contact Us',
                 subtitle: 'Get help and support',
-                onTap: () => _handleContactUs(),
+                onTap: () async {
+                  await _handleContactUs();
+                },
                 isDark: isDark,
               ),
 
@@ -178,7 +182,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 iconColor: const Color(0xFF64748B),
                 title: 'Copyright',
                 subtitle: '©2025 CinemaFlix',
-                onTap: () => {},
+                onTap: () => {showCopyrightDialog(context)},
                 isDark: isDark,
               ),
 
@@ -565,11 +569,41 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   // ------------------- Utilities -------------------
-  void _handleRequestMovie(BuildContext context) {}
+  void _handleRequestMovie(BuildContext context) {
+    showRequestMovieDialog(context);
+  }
 
-  void _handleContactUs() => _launchURL(
-    "https://wa.me/${splashController.remoteConfigModel.value?.config.contactUs ?? ''}",
-  );
+  _handleContactUs() async {
+    final splash = Get.find<SplashController>();
+
+    // Safely read user id
+    final userId = splash.userModel.value?.user.userId;
+
+    // Default message if id is null or does not contain "_"
+    String message = "";
+
+    if (userId != null && userId.contains("_")) {
+      final parts = userId.split("_");
+      if (parts.length > 1) {
+        message = parts[1];
+      }
+    }
+
+    final phone = splash.remoteConfigModel.value?.config.contactUs ?? "";
+
+    final Uri whatsappUrl = Uri.parse(
+      "https://wa.me/$phone?text=${Uri.encodeComponent(message)}",
+    );
+
+    if (await canLaunchUrl(whatsappUrl)) {
+      await launchUrl(
+        whatsappUrl,
+        mode: LaunchMode.externalApplication, // <-- required on Android 12+
+      );
+    } else {
+      throw 'Could not launch WhatsApp';
+    }
+  }
 
   void _handleShareApp() =>
       Share.share("Download CinemaFlix: Best movie streaming app!");

@@ -8,7 +8,7 @@ import 'package:get/get.dart';
 import '../../controllers/premium_controller.dart';
 import '../../models/premium_plan_model.dart';
 import '../../services/payment_service.dart';
-import '../../utils/common_dialogs.dart';
+import '../../utils/dialogs/show_aleart.dart';
 import 'premium_success_screen.dart';
 
 class PremiumPlansPage extends StatefulWidget {

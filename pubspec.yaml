@@ -55,7 +55,7 @@ dependencies:
   webview_flutter: ^4.13.0
   ota_update: ^7.0.2
   permission_handler: ^12.0.1
-  # google_mobile_ads: ^6.0.0
+  google_mobile_ads: ^6.0.0
 
 dev_dependencies:
   flutter_test:

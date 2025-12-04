@@ -103,6 +103,7 @@ class Config {
   Map<String, dynamic> toJson() => {
     "default_trial_count": defaultTrialCount,
     "default_reels_usage_limit": defaultReelsUsageLimit,
+    
     "enable_trial": enableTrial,
     "app_version": appVersion,
     "maintenance_mode": maintenanceMode,

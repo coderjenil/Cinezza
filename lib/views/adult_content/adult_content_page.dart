@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../widgets/banner_ad_widget.dart';
 import '../../widgets/category_movie_list_widget.dart';
 
 class AdultContentPage extends StatelessWidget {
@@ -53,11 +54,22 @@ class AdultContentPage extends StatelessWidget {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: controller.adultCategories.length,
-                    itemBuilder: (context, index) => CategoryMoviesList(
-                      category: controller.adultCategories[index],
-                      icon: Icons.movie_filter_rounded,
-                      cardWidth: cardWidth,
-                      sectionHeight: totalSectionHeight,
+                    itemBuilder: (context, index) => Column(
+                      children: [
+                        CategoryMoviesList(
+                          category: controller.adultCategories[index],
+                          icon: Icons.movie_filter_rounded,
+                          cardWidth: cardWidth,
+                          sectionHeight: totalSectionHeight,
+                        ),
+                        // Add Banner Ad after every 2nd category
+                        if ((index + 1) % 2 == 0 &&
+                            index < controller.adultCategories.length - 1)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: BannerAdWidget(),
+                          ),
+                      ],
                     ),
                   ),
                 ),

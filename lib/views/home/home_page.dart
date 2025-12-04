@@ -1,14 +1,18 @@
 import 'dart:async';
 
+import 'package:app/controllers/splash_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
+
 import '../../controllers/home_controller.dart';
 import '../../controllers/theme_controller.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_colors.dart';
-import '../../utils/common_dialogs.dart';
+import '../../utils/dialogs/first_time_credit_dialog.dart';
+import '../../utils/dialogs/show_aleart.dart';
 import '../../widgets/auto_transition_widget.dart';
+import '../../widgets/banner_ad_widget.dart'; // ADD THIS IMPORT
 import '../../widgets/category_movie_list_widget.dart';
 
 class HomePage extends StatefulWidget {
@@ -20,8 +24,9 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   final HomeController controller = Get.put(HomeController());
-  final ThemeController themeController = Get.find<ThemeController>();
+  final ThemeController themeController = Get.find();
   final ScrollController _scrollController = ScrollController();
+  final SplashController splashController = Get.find<SplashController>();
   Timer? _autoScrollTimer;
 
   @override
@@ -33,7 +38,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   fetchCategories() async {
     try {
       controller.isLoading.value = true;
+
       await controller.fetchAllCategories();
+      // Show dialog only if new user AND has credits
+      // if (splashController.isNewUser.value) {
+      showDialog(
+        context: Get.context!,
+        barrierDismissible: false,
+        builder: (_) => ModernCreditDialog(
+          credits: splashController.userModel.value!.user.trialCount,
+          onContinue: () {
+            Get.back();
+          },
+        ),
+      );
+      // }
     } catch (e) {
       showAlert(context: context, message: e);
     } finally {
@@ -53,7 +72,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
-
     final cardWidth = (screenWidth - 40) / 3.5;
     final cardHeight = cardWidth * 1.5;
     final titleHeight = 28.0;
@@ -76,7 +94,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 physics: const NeverScrollableScrollPhysics(),
                 slivers: [
                   _buildCompactAppBar(context, isDark),
-
                   SliverToBoxAdapter(
                     child: Shimmer.fromColors(
                       baseColor: isDark ? Colors.grey[850]! : Colors.grey[300]!,
@@ -87,7 +104,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       child: SizedBox(height: screenHeight * 0.22),
                     ),
                   ),
-
                   SliverToBoxAdapter(
                     child: _buildShimmerLoading(
                       context,
@@ -105,7 +121,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               physics: const BouncingScrollPhysics(),
               slivers: [
                 _buildCompactAppBar(context, isDark),
-                // Auto-Transition Banner (UNCHANGED)
+
+                // Auto-Transition Banner
                 SliverToBoxAdapter(
                   child: SizedBox(
                     height: screenHeight * 0.22,
@@ -116,22 +133,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   ),
                 ),
 
+                // Categories with Banner Ads
                 SliverToBoxAdapter(
-                  child: ListView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: controller.nonAdultCategories.length,
-                    itemBuilder: (context, index) =>
-                        (controller.nonAdultCategories[index].name ==
-                            "Trending")
-                        ? const SizedBox()
-                        : CategoryMoviesList(
-                            category: controller.nonAdultCategories[index],
-                            icon: Icons.movie_filter_rounded,
-                            cardWidth: cardWidth,
-                            sectionHeight: totalSectionHeight,
-                          ),
-                  ),
+                  child: _buildCategoriesWithAds(cardWidth, totalSectionHeight),
                 ),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 20)),
@@ -140,6 +144,41 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           }),
         ),
       ),
+    );
+  }
+
+  /// BUILD CATEGORIES WITH BANNER ADS EVERY 2 CATEGORIES
+  Widget _buildCategoriesWithAds(double cardWidth, double totalSectionHeight) {
+    final categories = controller.nonAdultCategories
+        .where((cat) => cat.name != "Trending")
+        .toList();
+
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      itemCount: categories.length,
+      itemBuilder: (context, index) {
+        final category = categories[index];
+
+        return Column(
+          children: [
+            // Movie Category
+            CategoryMoviesList(
+              category: category,
+              icon: Icons.movie_filter_rounded,
+              cardWidth: cardWidth,
+              sectionHeight: totalSectionHeight,
+            ),
+
+            // Add Banner Ad after every 2nd category
+            if ((index + 1) % 2 == 0 && index < categories.length - 1)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: BannerAdWidget(),
+              ),
+          ],
+        );
+      },
     );
   }
 

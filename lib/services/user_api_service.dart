@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'package:app/controllers/splash_controller.dart';
 import 'package:app/models/movies_model.dart';
+import 'package:app/services/ad.dart';
 import 'package:app/views/premium/premium_plan_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+
 import '../api/apsl_api_call.dart';
 import '../core/constants/api_end_points.dart';
 import '../models/user_model.dart';
@@ -86,9 +88,38 @@ class UserService {
     final bool hasTrial = (user.trialCount) > 0;
 
     if (isPremium || hasTrial) {
-      Get.to(() => VideoPlayerPage(movie: movie));
+      AdService().showAdWithCounter(
+        Get.context!,
+        onComplete: () {
+          Get.to(() => VideoPlayerPage(movie: movie));
+        },
+      );
     } else {
-      Get.to(() => PremiumPlansPage());
+      AdService().showAdWithCounter(
+        Get.context!,
+        onComplete: () {
+          Get.to(() => PremiumPlansPage());
+        },
+      );
     }
+  }
+
+  Future<void> requestMovie({required String movieName}) async {
+    try {
+      // Get device ID
+      final deviceId = await DeviceHelper.getDeviceId();
+      http.Response response = await ApiCall.callService(
+        requestInfo: APIRequestInfoObj(
+          requestType: HTTPRequestType.post,
+          url: ApiEndPoints.requestMovie,
+          headers: ApiHeaders.getHeaders(),
+          parameter: {"movie_name": movieName, "device_id": deviceId},
+          serviceName: 'Request Movie',
+          timeSecond: 30,
+        ),
+      );
+    } catch (e) {
+      rethrow;
+    } finally {}
   }
 }
