@@ -1,3 +1,4 @@
+import 'package:app/controllers/splash_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../core/theme/app_colors.dart';
@@ -6,15 +7,30 @@ import 'adult_content/adult_content_page.dart';
 import 'reels/reels_categories_screen.dart';
 import 'profile/profile_page.dart';
 
-class MainNavigation extends StatelessWidget {
-  MainNavigation({super.key});
+class MainNavigation extends StatefulWidget {
+  const MainNavigation({super.key});
 
+  @override
+  State<MainNavigation> createState() => _MainNavigationState();
+}
+
+class _MainNavigationState extends State<MainNavigation> {
   final RxInt currentIndex = 0.obs;
+  late final SplashController splashController;
 
-  final List<Widget> pages = [
+  @override
+  void initState() {
+    super.initState();
+    splashController = Get.find<SplashController>();
+  }
+
+  bool get showMature =>
+      splashController.remoteConfigModel.value?.config.showMature ?? false;
+
+  List<Widget> get pages => [
     HomePage(),
-    AdultContentPage(),
-    ReelsCategoriesScreen(),
+    if (showMature) AdultContentPage(),
+    if (showMature) ReelsCategoriesScreen(),
     ProfilePage(),
   ];
 
@@ -22,10 +38,15 @@ class MainNavigation extends StatelessWidget {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      body: Obx(() => IndexedStack(index: currentIndex.value, children: pages)),
-      bottomNavigationBar: Obx(
-        () => Container(
+    return Obx(() {
+      // Safety: clamp index in case showMature changed from true->false
+      if (currentIndex.value >= pages.length) {
+        currentIndex.value = pages.length - 1;
+      }
+
+      return Scaffold(
+        body: IndexedStack(index: currentIndex.value, children: pages),
+        bottomNavigationBar: Container(
           decoration: BoxDecoration(
             gradient: isDark
                 ? LinearGradient(
@@ -64,23 +85,28 @@ class MainNavigation extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildNavItem(context, 0, Icons.home_rounded, 'Home', isDark),
+
+                  if (showMature)
+                    _buildNavItem(
+                      context,
+                      1,
+                      Icons.eighteen_up_rating_rounded,
+                      '18+',
+                      isDark,
+                    ),
+
+                  if (showMature)
+                    _buildNavItem(
+                      context,
+                      2,
+                      Icons.video_library_rounded,
+                      'Reels',
+                      isDark,
+                    ),
+
                   _buildNavItem(
                     context,
-                    1,
-                    Icons.eighteen_up_rating_rounded,
-                    '18+',
-                    isDark,
-                  ),
-                  _buildNavItem(
-                    context,
-                    2,
-                    Icons.video_library_rounded,
-                    'Reels',
-                    isDark,
-                  ),
-                  _buildNavItem(
-                    context,
-                    3,
+                    showMature ? 3 : 1,
                     Icons.person_rounded,
                     'Profile',
                     isDark,
@@ -90,8 +116,8 @@ class MainNavigation extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildNavItem(

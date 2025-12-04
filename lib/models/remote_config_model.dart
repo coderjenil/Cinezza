@@ -54,6 +54,7 @@ class Config {
   String apkDownloadUrl;
   bool forceUpdate;
   int reelIncreaseTime;
+  bool showMature;
 
   Config({
     required this.defaultTrialCount,
@@ -74,6 +75,7 @@ class Config {
     required this.apkDownloadUrl,
     required this.forceUpdate,
     required this.reelIncreaseTime,
+    required this.showMature,
   });
 
   factory Config.fromJson(Map<String, dynamic> json) => Config(
@@ -95,6 +97,7 @@ class Config {
     apkDownloadUrl: json["apk_download_url"],
     forceUpdate: json["force_update"],
     reelIncreaseTime: json["reel_view_increase_time"],
+    showMature: json["show_mature_content"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -116,6 +119,7 @@ class Config {
     "apk_download_url": apkDownloadUrl,
     "force_update": forceUpdate,
     "reel_view_increase_time": reelIncreaseTime,
+    "show_mature_content": showMature,
   };
 }
 

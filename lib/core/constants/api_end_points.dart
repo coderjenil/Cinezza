@@ -8,6 +8,7 @@ class ApiEndPoints {
   static const String updateUserByDevice = "${baseURL}users/";
   static const String fetchPremiumPlans = "${baseURL}plans";
   static const String fetchRemoteConfig = "${baseURL}remote-config";
+  static const String movieSearch = "${baseURL}movies/search?q=";
 }
 
 class ApiHeaders {

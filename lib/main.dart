@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
-// import 'package:google_mobile_ads/google_mobile_ads.dart' show MobileAds;
 import 'controllers/splash_controller.dart';
 import 'core/theme/app_themes.dart';
 import 'core/routes/app_routes.dart';
@@ -21,6 +20,7 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
+  
   Get.put(SplashController());
   Get.put(PremiumController());
 
