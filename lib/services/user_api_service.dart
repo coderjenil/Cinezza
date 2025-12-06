@@ -88,12 +88,16 @@ class UserService {
     final bool hasTrial = (user.trialCount) > 0;
 
     if (isPremium || hasTrial) {
-      AdService().showAdWithCounter(
-        Get.context!,
-        onComplete: () {
-          Get.to(() => VideoPlayerPage(movie: movie));
-        },
-      );
+      if (isPremium) {
+        Get.to(() => VideoPlayerPage(movie: movie));
+      } else {
+        AdService().showAdWithCounter(
+          Get.context!,
+          onComplete: () {
+            Get.to(() => VideoPlayerPage(movie: movie));
+          },
+        );
+      }
     } else {
       AdService().showAdWithCounter(
         Get.context!,

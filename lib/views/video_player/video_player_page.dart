@@ -370,7 +370,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void _getInitialVolume() async {
     if (mounted) {
       setState(() => _volume = 0.5);
-      _applyVolume();
+      // _applyVolume();
     }
   }
 
@@ -384,22 +384,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   }
 
   void _applyVolume() {
-    double systemVolume;
-    double audioBoost;
+    FlutterVolumeController.setVolume(_volume);
 
-    if (_volume <= 0.5) {
-      systemVolume = _volume * 2;
-      audioBoost = 1.0;
-    } else {
-      systemVolume = 1.0;
-      audioBoost = (_volume - 0.5) * 2 + 1.0;
-    }
-
-    FlutterVolumeController.setVolume(systemVolume);
-
-    if (controller.videoController != null &&
-        controller.videoController!.value.isInitialized) {
-      controller.videoController!.setVolume(audioBoost);
+    if (controller.videoController?.value.isInitialized ?? false) {
+      controller.videoController!.setVolume(_volume);
     }
   }
 
@@ -461,7 +449,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         onWillPop: _onWillPop,
         child: Scaffold(
           backgroundColor: Colors.black,
-          body: _buildVideoPlayerSection(), // fullscreen = only player UI
+          body: _buildVideoPlayerSection(),
+          // fullscreen = only player UI
         ),
       );
     }
@@ -627,6 +616,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                     ],
                   ),
                   child: _buildEpisodeSelector(isDark),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: AdService().native(),
                 ),
               ],
             ),

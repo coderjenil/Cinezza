@@ -12,7 +12,7 @@ import '../../core/theme/app_colors.dart';
 import '../../utils/dialogs/first_time_credit_dialog.dart';
 import '../../utils/dialogs/show_aleart.dart';
 import '../../widgets/auto_transition_widget.dart';
-import '../../widgets/banner_ad_widget.dart'; // ADD THIS IMPORT
+import '../../widgets/banner_ad_widget.dart';
 import '../../widgets/category_movie_list_widget.dart';
 
 class HomePage extends StatefulWidget {
@@ -41,18 +41,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
       await controller.fetchAllCategories();
       // Show dialog only if new user AND has credits
-      // if (splashController.isNewUser.value) {
-      showDialog(
-        context: Get.context!,
-        barrierDismissible: false,
-        builder: (_) => ModernCreditDialog(
-          credits: splashController.userModel.value!.user.trialCount,
-          onContinue: () {
-            Get.back();
-          },
-        ),
-      );
-      // }
+      if (splashController.isNewUser.value) {
+        showDialog(
+          context: Get.context!,
+          barrierDismissible: false,
+          builder: (_) => ModernCreditDialog(
+            credits: splashController.userModel.value!.user.trialCount,
+            onContinue: () {
+              Get.back();
+            },
+          ),
+        );
+      }
     } catch (e) {
       showAlert(context: context, message: e);
     } finally {

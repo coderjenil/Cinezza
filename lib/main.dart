@@ -11,15 +11,13 @@ import 'core/routes/app_routes.dart';
 import 'core/theme/app_themes.dart';
 
 void main() async {
+
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize GetStorage
   await GetStorage.init();
   // Initialize Google Mobile Ads
   MobileAds.instance.initialize();
-
-
-
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -56,5 +54,5 @@ class MyApp extends StatelessWidget {
         getPages: AppRoutes.routes,
       ),
     );
-  }
+  } 
 }

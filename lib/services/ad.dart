@@ -11,8 +11,6 @@ class AdService {
   factory AdService() => _instance;
   AdService._internal();
 
-  static bool Function()? isUserPremium;
-
   int _adCounter = 0;
   int _delayCount = 1;
 
@@ -276,7 +274,7 @@ class AdService {
         controller.remoteConfigModel.value?.config.isAdsEnable ?? true;
 
     if (!remote) return true;
-    if (isUserPremium != null) return isUserPremium!.call();
+    if (controller.isPremium) return true;
 
     return false;
   }
@@ -307,7 +305,7 @@ class _NativeAdLoaderState extends State<_NativeAdLoader> {
         onAdFailedToLoad: (_, __) => setState(() => loaded = false),
       ),
       nativeTemplateStyle: NativeTemplateStyle(
-        templateType: TemplateType.medium,
+        templateType: TemplateType.small,
       ),
     );
 
@@ -317,7 +315,7 @@ class _NativeAdLoaderState extends State<_NativeAdLoader> {
   @override
   Widget build(BuildContext context) {
     if (!loaded) return const SizedBox.shrink();
-    return SizedBox(height: 300, child: AdWidget(ad: _ad!));
+    return SizedBox(height: 200, child: AdWidget(ad: _ad!));
   }
 
   @override
