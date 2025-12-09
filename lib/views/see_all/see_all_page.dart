@@ -197,6 +197,7 @@ class _SeeAllPageState extends State<SeeAllPage> {
 
                           final movie = _movies[index];
                           return MovieCard(
+                            onTap: () {},
                             movie: movie,
 
                             index: 0, // Pass 0 to disable staggered animation

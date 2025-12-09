@@ -1,8 +1,6 @@
 import 'dart:async';
 
-import 'package:app/models/categories_model.dart';
 import 'package:flutter/material.dart';
-import 'package:get/utils.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../controllers/home_controller.dart';
@@ -54,7 +52,7 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
       });
 
       moviesModel = await widget.controller.fetchMoviesByCategory(
-        widget.controller.trendingCategory.categoryId ?? '',
+        categoryId: widget.controller.trendingCategory.categoryId ?? '',
       );
 
       if (mounted && (moviesModel.data?.isNotEmpty ?? false)) {

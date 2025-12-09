@@ -43,7 +43,7 @@ class PaymentService {
 
       final options = {
         "key": razorpayKey,
-        "amount": (plan.price * 100),
+        "amount": (plan.finalPrice * 100),
         "currency": "INR",
         "name": "Cinezza Premium",
         'payment_capture': 1,

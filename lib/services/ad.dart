@@ -315,7 +315,7 @@ class _NativeAdLoaderState extends State<_NativeAdLoader> {
   @override
   Widget build(BuildContext context) {
     if (!loaded) return const SizedBox.shrink();
-    return SizedBox(height: 200, child: AdWidget(ad: _ad!));
+    return SizedBox(height: 110, child: AdWidget(ad: _ad!));
   }
 
   @override

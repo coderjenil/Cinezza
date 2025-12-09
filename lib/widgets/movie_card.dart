@@ -1,4 +1,4 @@
-import 'package:app/services/user_api_service.dart';
+import 'package:cinezza/services/user_api_service.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../models/movies_model.dart';
@@ -11,6 +11,8 @@ class MovieCard extends StatefulWidget {
   final double? width;
   final double? height;
   final int index;
+  final bool isFromVideoPlayer;
+  final void Function() onTap;
 
   const MovieCard({
     super.key,
@@ -19,6 +21,8 @@ class MovieCard extends StatefulWidget {
     this.width,
     this.height,
     this.index = 0,
+    this.isFromVideoPlayer = false,
+    required this.onTap,
   });
 
   @override
@@ -80,7 +84,13 @@ class _MovieCardState extends State<MovieCard>
         child: ScaleTransition(
           scale: _scaleAnimation,
           child: GestureDetector(
-            onTap: () => UserService().canWatchMovie(movie: widget.movie),
+            onTap: () {
+              widget.onTap();
+              UserService().canWatchMovie(
+                movie: widget.movie,
+                isFromVideoPlayer: widget.isFromVideoPlayer,
+              );
+            },
             child: SizedBox(
               width: widget.width,
               child: Column(

@@ -115,7 +115,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 icon: Icons.camera_alt_rounded,
                 iconColor: const Color(0xFFE1306C),
                 title: 'Follow us on Instagram',
-                subtitle: '@CinemaFlix_App',
+                subtitle: '@Cinezza_App',
                 onTap: () => _launchURL(
                   splashController
                           .remoteConfigModel
@@ -133,7 +133,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 icon: Icons.facebook_rounded,
                 iconColor: const Color(0xFF1877F2),
                 title: 'Follow us on Facebook',
-                subtitle: '@CinemaFlix_App',
+                subtitle: '@Cinezza_App',
                 onTap: () => _launchURL(
                   splashController
                           .remoteConfigModel
@@ -171,7 +171,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 icon: Icons.share_rounded,
                 iconColor: const Color(0xFF06B6D4),
                 title: 'Share App',
-                subtitle: 'Tell your friends about CinemaFlix',
+                subtitle: 'Tell your friends about Cinezza',
                 onTap: () => _handleShareApp(),
                 isDark: isDark,
               ),
@@ -181,7 +181,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 icon: Icons.copyright_rounded,
                 iconColor: const Color(0xFF64748B),
                 title: 'Copyright',
-                subtitle: '©2025 CinemaFlix',
+                subtitle: '©2025 Cinezza',
                 onTap: () => {showCopyrightDialog(context)},
                 isDark: isDark,
               ),
@@ -209,9 +209,9 @@ class _ProfilePageState extends State<ProfilePage> {
     final splash = Get.find<SplashController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final bool isPremium = splash.userModel.value?.user.planActive ?? false;
+    bool isPremium = splash.userModel.value?.user.planActive ?? false;
     int trialLeft = splash.userModel.value?.user.trialCount ?? 0;
-    final String? expiryRaw = splash.userModel.value?.user.planExpiryDate;
+    String? expiryRaw = splash.userModel.value?.user.planExpiryDate;
 
     String expiryText = "";
     if (isPremium && expiryRaw != null) {
@@ -227,6 +227,9 @@ class _ProfilePageState extends State<ProfilePage> {
     return SliverToBoxAdapter(
       child: Obx(() {
         trialLeft = splash.userModel.value?.user.trialCount ?? 0;
+        isPremium = splash.userModel.value?.user.planActive ?? false;
+        expiryRaw = splash.userModel.value?.user.planExpiryDate;
+
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           child: Container(
@@ -606,7 +609,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _handleShareApp() =>
-      Share.share("Download CinemaFlix: Best movie streaming app!");
+      Share.share("Download Cinezza: Best movie streaming app!");
 
   void _showVersionDialog(BuildContext context) {}
 

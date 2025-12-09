@@ -1,7 +1,7 @@
 // reels_webview_screen.dart
 
 import 'dart:async';
-import 'package:app/controllers/splash_controller.dart';
+import 'package:cinezza/controllers/splash_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:webview_flutter/webview_flutter.dart';

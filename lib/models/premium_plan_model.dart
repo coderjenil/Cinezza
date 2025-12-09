@@ -13,19 +13,19 @@ String premiumPlanModelToJson(PremiumPlanModel data) =>
 class PremiumPlanModel {
   bool success;
   String message;
-  List<PlanModel> plan;
+  List<PlanModel> plans;
 
   PremiumPlanModel({
     required this.success,
     required this.message,
-    required this.plan,
+    required this.plans,
   });
 
   factory PremiumPlanModel.fromJson(Map<String, dynamic> json) =>
       PremiumPlanModel(
         success: json["success"],
         message: json["message"],
-        plan: List<PlanModel>.from(
+        plans: List<PlanModel>.from(
           json["data"].map((x) => PlanModel.fromJson(x)),
         ),
       );
@@ -33,7 +33,7 @@ class PremiumPlanModel {
   Map<String, dynamic> toJson() => {
     "success": success,
     "message": message,
-    "data": List<dynamic>.from(plan.map((x) => x.toJson())),
+    "data": List<dynamic>.from(plans.map((x) => x.toJson())),
   };
 }
 
@@ -50,12 +50,16 @@ class PlanModel {
   int displayOrder;
   List<dynamic> features;
   int discountPercent;
-  dynamic originalPrice;
+  int? originalPrice;
   String color;
   int totalPurchases;
   int revenue;
   DateTime createdAt;
   DateTime updatedAt;
+  int v;
+  double finalPrice;
+  String durationText;
+  bool hasDiscount;
 
   PlanModel({
     required this.id,
@@ -76,6 +80,10 @@ class PlanModel {
     required this.revenue,
     required this.createdAt,
     required this.updatedAt,
+    required this.v,
+    required this.finalPrice,
+    required this.durationText,
+    required this.hasDiscount,
   });
 
   factory PlanModel.fromJson(Map<String, dynamic> json) => PlanModel(
@@ -97,6 +105,10 @@ class PlanModel {
     revenue: json["revenue"],
     createdAt: DateTime.parse(json["created_at"]),
     updatedAt: DateTime.parse(json["updated_at"]),
+    v: json["__v"],
+    finalPrice: json["finalPrice"]?.toDouble(),
+    durationText: json["durationText"],
+    hasDiscount: json["hasDiscount"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -118,5 +130,9 @@ class PlanModel {
     "revenue": revenue,
     "created_at": createdAt.toIso8601String(),
     "updated_at": updatedAt.toIso8601String(),
+    "__v": v,
+    "finalPrice": finalPrice,
+    "durationText": durationText,
+    "hasDiscount": hasDiscount,
   };
 }

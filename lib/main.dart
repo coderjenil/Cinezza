@@ -1,4 +1,4 @@
-import 'package:app/controllers/premium_controller.dart';
+import 'package:cinezza/controllers/premium_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -11,11 +11,11 @@ import 'core/routes/app_routes.dart';
 import 'core/theme/app_themes.dart';
 
 void main() async {
-
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize GetStorage
   await GetStorage.init();
+
   // Initialize Google Mobile Ads
   MobileAds.instance.initialize();
 
@@ -54,5 +54,5 @@ class MyApp extends StatelessWidget {
         getPages: AppRoutes.routes,
       ),
     );
-  } 
+  }
 }
