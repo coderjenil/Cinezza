@@ -1,10 +1,9 @@
 import 'dart:math';
-
-import 'package:app/core/theme/app_colors.dart';
-import 'package:app/services/user_api_service.dart';
+import 'package:cinezza/core/theme/app_colors.dart';
+import 'package:cinezza/services/app_service.dart';
+import 'package:cinezza/services/user_api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../controllers/premium_controller.dart';
 import '../../models/premium_plan_model.dart';
 import '../../services/payment_service.dart';
@@ -36,7 +35,6 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
       duration: const Duration(milliseconds: 2000),
     )..repeat(reverse: true);
 
-    // Smooth shimmer animation - increased duration for subtlety
     shimmerController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 2500),
@@ -76,8 +74,6 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      // isScrollBarVisible: false,
-      // FIX 1: Constrain bottom sheet height to prevent overflow
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.75,
       ),
@@ -88,7 +84,6 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
               : AppColors.lightCardBackground,
           borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
         ),
-        // FIX 1: Use SingleChildScrollView for overflow protection
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
           child: Padding(
@@ -96,12 +91,11 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Handle bar
                 Container(
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: textColor.withValues(alpha: 0.3),
+                    color: textColor.withOpacity(0.3),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -146,20 +140,20 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                   primaryColor,
                   textColor,
                 ),
-                _buildBenefitItem(
-                  Icons.download_for_offline_rounded,
-                  "Download & Watch Offline",
-                  "Perfect for flights & commutes",
-                  primaryColor,
-                  textColor,
-                ),
-                _buildBenefitItem(
-                  Icons.devices_rounded,
-                  "Multi-Device Access",
-                  "TV, laptop, phone, tablet",
-                  primaryColor,
-                  textColor,
-                ),
+                // _buildBenefitItem(
+                //   Icons.download_for_offline_rounded,
+                //   "Download & Watch Offline",
+                //   "Perfect for flights & commutes",
+                //   primaryColor,
+                //   textColor,
+                // ),
+                // _buildBenefitItem(
+                //   Icons.devices_rounded,
+                //   "Multi-Device Access",
+                //   "TV, laptop, phone, tablet",
+                //   primaryColor,
+                //   textColor,
+                // ),
                 _buildBenefitItem(
                   Icons.block_rounded,
                   "Zero Ads Forever",
@@ -197,13 +191,12 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: primaryColor.withValues(alpha: 0.15),
+              color: primaryColor.withOpacity(0.15),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: primaryColor, size: 20),
           ),
           const SizedBox(width: 12),
-          // FIX 1: Wrap with Flexible to prevent overflow
           Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,10 +215,10 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                   subtitle,
                   style: TextStyle(
                     fontSize: 12,
-                    color: textColor.withValues(alpha: 0.6),
+                    color: textColor.withOpacity(0.6),
                   ),
-                  overflow: TextOverflow.ellipsis,
                   maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
@@ -269,7 +262,6 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
         return SafeArea(
           child: Column(
             children: [
-              // HEADER - Compact
               Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12,
@@ -306,12 +298,10 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                 ),
               ),
 
-              // MAIN CONTENT - Expanded to fill remaining space
               Expanded(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    // HERO SECTION - Compact
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       child: Column(
@@ -326,9 +316,8 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                                   gradient: AppColors.oceanGradient,
                                   boxShadow: [
                                     BoxShadow(
-                                      color: primaryColor.withValues(
-                                        alpha:
-                                            0.3 + (pulseController.value * 0.4),
+                                      color: primaryColor.withOpacity(
+                                        0.3 + (pulseController.value * 0.4),
                                       ),
                                       blurRadius:
                                           20 + (pulseController.value * 15),
@@ -360,7 +349,6 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                             ),
                           ),
                           const SizedBox(height: 8),
-                          // FIX 1: Wrap quick benefits in Flexible/Expanded to prevent overflow
                           Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
@@ -374,7 +362,7 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                               Container(
                                 width: 1,
                                 height: 12,
-                                color: textColor.withValues(alpha: 0.3),
+                                color: textColor.withOpacity(0.3),
                                 margin: const EdgeInsets.symmetric(
                                   horizontal: 8,
                                 ),
@@ -386,50 +374,36 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                                   textColor,
                                 ),
                               ),
-                              Container(
-                                width: 1,
-                                height: 12,
-                                color: textColor.withValues(alpha: 0.3),
-                                margin: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                ),
-                              ),
-                              Flexible(
-                                child: _quickBenefit(
-                                  Icons.download_rounded,
-                                  "Offline",
-                                  textColor,
-                                ),
-                              ),
                             ],
                           ),
                         ],
                       ),
                     ),
 
-                    // PLAN CARDS - Horizontal Scrollable
                     SizedBox(
-                      height: 170,
-                      child: ListView.builder(
-                        scrollDirection: Axis.horizontal,
-                        itemCount: plans.length,
-                        physics: const BouncingScrollPhysics(),
-                        // padding: const EdgeInsets.symmetric(horizontal: 8),
-                        itemBuilder: (context, index) {
-                          return _buildCompactPlanCard(
-                            plans[index],
-                            index == selectedIndex,
-                            index,
-                            isDark,
-                            primaryColor,
-                            cardBg,
-                            textColor,
-                          );
-                        },
-                      ),
+                      height: 190,
+                      child: Obx(() {
+                        return controller.premiumPlans.isEmpty
+                            ? CircularProgressIndicator()
+                            : ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: plans.length,
+                                physics: const BouncingScrollPhysics(),
+                                itemBuilder: (context, index) {
+                                  return _buildCompactPlanCard(
+                                    plans[index],
+                                    index == selectedIndex,
+                                    index,
+                                    isDark,
+                                    primaryColor,
+                                    cardBg,
+                                    textColor,
+                                  );
+                                },
+                              );
+                      }),
                     ),
 
-                    // KEY BENEFITS - Ultra Compact with Modal Link
                     Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16),
                       padding: const EdgeInsets.all(16),
@@ -437,7 +411,7 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                         color: cardBg,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: primaryColor.withValues(alpha: 0.2),
+                          color: primaryColor.withOpacity(0.2),
                         ),
                       ),
                       child: Column(
@@ -514,8 +488,8 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                               ),
                               Expanded(
                                 child: _compactBenefit(
-                                  Icons.download_rounded,
-                                  "Download\nOffline",
+                                  Icons.cancel_rounded,
+                                  "No Ads",
                                   primaryColor,
                                   textColor,
                                 ),
@@ -526,8 +500,6 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                       ),
                     ),
 
-                    // TRUST SIGNALS - Minimal
-                    // FIX 1: Wrap in Flexible to prevent overflow
                     Flexible(
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -565,7 +537,6 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                 ),
               ),
 
-              // BOTTOM CTA - Fixed Height
               _buildBottomCTA(
                 selectedPlan,
                 primaryColor,
@@ -584,7 +555,7 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 14, color: textColor.withValues(alpha: 0.7)),
+        Icon(icon, size: 14, color: textColor.withOpacity(0.7)),
         const SizedBox(width: 4),
         Flexible(
           child: Text(
@@ -592,7 +563,7 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
-              color: textColor.withValues(alpha: 0.7),
+              color: textColor.withOpacity(0.7),
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -612,7 +583,7 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: primaryColor.withValues(alpha: 0.15),
+            color: primaryColor.withOpacity(0.15),
             borderRadius: BorderRadius.circular(10),
           ),
           child: Icon(icon, color: primaryColor, size: 18),
@@ -627,8 +598,8 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
             color: textColor,
             height: 1.2,
           ),
-          overflow: TextOverflow.ellipsis,
           maxLines: 2,
+          overflow: TextOverflow.ellipsis,
         ),
       ],
     );
@@ -643,9 +614,9 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
-        color: primaryColor.withValues(alpha: 0.1),
+        color: primaryColor.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: primaryColor.withValues(alpha: 0.2)),
+        border: Border.all(color: primaryColor.withOpacity(0.2)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -668,7 +639,6 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
     );
   }
 
-  // FIX 1 & 2: Fixed plan card with proper constraints and blue color scheme
   Widget _buildCompactPlanCard(
     PlanModel plan,
     bool isSelected,
@@ -678,7 +648,10 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
     Color cardBg,
     Color textColor,
   ) {
-    final savingsPercent = _calculateSavings(plan);
+    final hasDiscount = plan.discountPercent > 0;
+    final perDayCost = (plan.finalPrice / plan.durationInDays).toStringAsFixed(
+      1,
+    );
 
     return GestureDetector(
       onTap: () => setState(() => selectedIndex = index),
@@ -692,15 +665,12 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
           borderRadius: BorderRadius.circular(16),
           color: cardBg,
           border: Border.all(
-            color: isSelected
-                ? primaryColor
-                : primaryColor.withValues(alpha: 0.2),
+            color: isSelected ? primaryColor : primaryColor.withOpacity(0.2),
             width: isSelected ? 2.5 : 1,
           ),
-
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+              color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
               blurRadius: isSelected ? 20 : 8,
               spreadRadius: isSelected ? 2 : 0,
               offset: const Offset(0, 4),
@@ -710,8 +680,7 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
         child: Stack(
           clipBehavior: Clip.none,
           children: [
-            // Badges
-            if (savingsPercent > 0)
+            if (plan.discountPercent > 0)
               Positioned(
                 right: -8,
                 top: -8,
@@ -721,17 +690,17 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                     vertical: 3,
                   ),
                   decoration: BoxDecoration(
-                    color: AppColors.success,
+                    color: Colors.green,
                     borderRadius: BorderRadius.circular(6),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.success.withValues(alpha: 0.4),
+                        color: Colors.green.withOpacity(0.4),
                         blurRadius: 6,
                       ),
                     ],
                   ),
                   child: Text(
-                    "SAVE $savingsPercent%",
+                    "SAVE ${plan.discountPercent}%",
                     style: const TextStyle(
                       fontSize: 7,
                       fontWeight: FontWeight.w900,
@@ -755,7 +724,7 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                     borderRadius: BorderRadius.circular(6),
                     boxShadow: [
                       BoxShadow(
-                        color: primaryColor.withValues(alpha: 0.4),
+                        color: primaryColor.withOpacity(0.4),
                         blurRadius: 6,
                       ),
                     ],
@@ -771,13 +740,11 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                 ),
               ),
 
-            // FIX 1: Use Flexible/Expanded in Column to prevent overflow
             Column(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 const SizedBox(height: 4),
 
-                // Title - with overflow protection
                 Text(
                   plan.title,
                   textAlign: TextAlign.center,
@@ -786,38 +753,35 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                     fontWeight: FontWeight.w800,
                     color: isSelected ? Colors.amber : textColor,
                   ),
-                  overflow: TextOverflow.ellipsis,
-                  maxLines: 1,
                 ),
 
                 const SizedBox(height: 8),
 
-                // Price
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.only(top: 3),
-                      child: Text(
-                        "₹",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.amber : textColor,
-                        ),
-                      ),
-                    ),
-                    Flexible(
-                      child: Text(
-                        "${plan.price}",
-                        style: TextStyle(
-                          fontSize: 30,
-                          fontWeight: FontWeight.w900,
-                          color: isSelected ? Colors.amber : textColor,
-                          height: 1,
-                        ),
-                        overflow: TextOverflow.ellipsis,
+                    Expanded(
+                      child: Column(
+                        children: [
+                          if (plan.discountPercent > 0)
+                            Text(
+                              "₹${plan.originalPrice}",
+                              style: TextStyle(
+                                decoration: TextDecoration.lineThrough,
+                                fontSize: 16,
+                                color: textColor.withOpacity(0.5),
+                              ),
+                            ),
+                          if (plan.discountPercent > 0)
+                            const SizedBox(width: 6),
+                          Text(
+                            "₹${plan.finalPrice.toStringAsFixed(0)}",
+                            style: TextStyle(
+                              fontSize: 30,
+                              fontWeight: FontWeight.w900,
+                              color: isSelected ? Colors.amber : textColor,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -825,7 +789,6 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
 
                 const SizedBox(height: 4),
 
-                // Duration
                 Text(
                   _durationText(plan.durationInDays),
                   style: TextStyle(
@@ -833,14 +796,12 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                     fontWeight: FontWeight.w600,
                     color: isSelected
                         ? Colors.amber
-                        : textColor.withValues(alpha: 0.6),
+                        : textColor.withOpacity(0.6),
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
 
                 const SizedBox(height: 6),
 
-                // Per Day
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 8,
@@ -848,47 +809,23 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                   ),
                   decoration: BoxDecoration(
                     color: isSelected
-                        ? primaryColor.withValues(alpha: 0.15)
-                        : primaryColor.withValues(alpha: 0.1),
+                        ? primaryColor.withOpacity(0.15)
+                        : primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(6),
                   ),
                   child: Text(
-                    "₹${(plan.price / plan.durationInDays).toStringAsFixed(1)}/day",
+                    "₹$perDayCost/day",
                     style: TextStyle(
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
                       color: isSelected
                           ? Colors.amber
-                          : textColor.withValues(alpha: 0.7),
+                          : textColor.withOpacity(0.7),
                     ),
-                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
 
                 const SizedBox(height: 8),
-
-                // // Selected Indicator
-                // if (isSelected)
-                //   Container(
-                //     padding: const EdgeInsets.symmetric(
-                //       horizontal: 10,
-                //       vertical: 3,
-                //     ),
-                //     decoration: BoxDecoration(
-                //       gradient: AppColors.oceanGradient,
-                //       borderRadius: BorderRadius.circular(8),
-                //     ),
-                //     child: const Text(
-                //       "SELECTED",
-                //       style: TextStyle(
-                //         fontSize: 8,
-                //         fontWeight: FontWeight.w900,
-                //         color: Colors.white,
-                //       ),
-                //     ),
-                //   )
-                // else
-                //   const SizedBox(height: 19),
               ],
             ),
           ],
@@ -897,7 +834,6 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
     );
   }
 
-  // FIX 1 & 3: Fixed bottom CTA with smooth shimmer animation
   Widget _buildBottomCTA(
     PlanModel selectedPlan,
     Color primaryColor,
@@ -910,14 +846,11 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
       decoration: BoxDecoration(
         color: bgColor,
         border: Border(
-          top: BorderSide(
-            color: primaryColor.withValues(alpha: 0.15),
-            width: 1,
-          ),
+          top: BorderSide(color: primaryColor.withOpacity(0.15), width: 1),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: Colors.black.withOpacity(0.1),
             blurRadius: 20,
             offset: const Offset(0, -4),
           ),
@@ -926,67 +859,18 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Selected Plan Summary
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  primaryColor.withValues(alpha: 0.15),
-                  primaryColor.withValues(alpha: 0.05),
-                ],
+          if (selectedPlan.discountPercent > 0)
+            Text(
+              "🎉 You save ${selectedPlan.discountPercent}%!",
+              style: TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+                fontSize: 13,
               ),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: primaryColor.withValues(alpha: 0.3)),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                // FIX 1: Wrap in Flexible to prevent overflow
-                Flexible(
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.workspace_premium_rounded,
-                        color: primaryColor,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          "${selectedPlan.title} • ${_durationText(selectedPlan.durationInDays)}",
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
-                            color: textColor,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 8),
-                ShaderMask(
-                  shaderCallback: (bounds) =>
-                      AppColors.oceanGradient.createShader(bounds),
-                  child: Text(
-                    "₹${selectedPlan.price}",
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 10),
 
-          // FIX 3: Smooth Shimmer CTA Button
           GestureDetector(
             onTapDown: (_) => scaleController.animateTo(0.95),
             onTapUp: (_) => scaleController.animateTo(1.0),
@@ -997,13 +881,7 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                 plan: selectedPlan,
                 razorpayKey: "rzp_test_1DP5mmOlF5G5ag",
                 onPaymentSuccess: () async {
-                  await UserService.updateUserByDeviceId(
-                    activePlan: selectedPlan.planId,
-                    planActive: true,
-                    planExpiryDate: DateTime.now()
-                        .add(Duration(days: selectedPlan.durationInDays))
-                        .toIso8601String(),
-                  );
+                  await UserService.updatePlan(planId: selectedPlan.planId);
                   Get.to(() => PremiumSuccessScreen(selectedPlan));
                 },
                 onPaymentFailed: (err) {
@@ -1013,29 +891,31 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
             },
             child: ScaleTransition(
               scale: scaleController,
-              child: _buildSmoothShimmerButton(primaryColor, isDark),
+              child: _buildSmoothShimmerButton(
+                primaryColor,
+                isDark,
+                selectedPlan,
+              ),
             ),
           ),
 
           const SizedBox(height: 8),
 
-          // Risk Reversal - with overflow protection
           Text(
             "Cancel anytime • Money-back guarantee",
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: textColor.withValues(alpha: 0.6),
-              fontSize: 11,
-            ),
-            overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: textColor.withOpacity(0.6), fontSize: 11),
           ),
         ],
       ),
     );
   }
 
-  // FIX 3: Smooth shimmer animation without reflective artifacts
-  Widget _buildSmoothShimmerButton(Color primaryColor, bool isDark) {
+  Widget _buildSmoothShimmerButton(
+    Color primaryColor,
+    bool isDark,
+    PlanModel plan,
+  ) {
     return AnimatedBuilder(
       animation: shimmerController,
       builder: (context, child) {
@@ -1048,7 +928,6 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                 AppColors.darkAccent,
                 AppColors.darkPrimary,
               ],
-              // Smooth shimmer stops using sine curve for natural motion
               stops: [
                 _calculateShimmerStop(0),
                 _calculateShimmerStop(0.5),
@@ -1061,13 +940,12 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: primaryColor.withValues(alpha: 0.4),
+                color: primaryColor.withOpacity(0.4),
                 blurRadius: 20,
                 offset: const Offset(0, 6),
               ),
-              // Subtle inner glow for depth
               BoxShadow(
-                color: Colors.white.withValues(alpha: 0.1),
+                color: Colors.white.withOpacity(0.1),
                 blurRadius: 5,
                 offset: const Offset(0, -2),
               ),
@@ -1075,16 +953,16 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-              Icon(
+            children: [
+              const Icon(
                 Icons.workspace_premium_rounded,
                 color: Colors.white,
                 size: 24,
               ),
-              SizedBox(width: 10),
+              const SizedBox(width: 10),
               Text(
-                "Start Premium Now",
-                style: TextStyle(
+                "Get for ₹${plan.finalPrice.toStringAsFixed(0)}",
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w900,
                   color: Colors.white,
@@ -1098,87 +976,24 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
     );
   }
 
-  // FIX 3: Calculate smooth shimmer stops using easing function
   double _calculateShimmerStop(double base) {
-    // Use sine curve for smooth, natural shimmer motion
     final animValue = shimmerController.value;
     final offset = sin(animValue * pi * 2) * 0.3;
     return (base + offset).clamp(0.0, 1.0);
   }
 
-  // UTILITY FUNCTIONS
   int _calculateSavings(PlanModel plan) {
     if (plan.durationInDays == 7) return 0;
     final weeklyPrice = 39.0;
     final weekEquivalent = (plan.durationInDays / 7).ceil();
     final regularPrice = weeklyPrice * weekEquivalent;
-    final savings = ((regularPrice - plan.price) / regularPrice * 100).round();
+    final savings = ((regularPrice - plan.finalPrice) / regularPrice * 100)
+        .round();
     return savings > 0 ? savings : 0;
   }
 
   List<PlanModel> _dummyPlans() {
-    return [
-      PlanModel(
-        id: "p1",
-        planId: "1",
-        title: "Weekly",
-        description: "",
-        price: 39,
-        currency: "INR",
-        durationInDays: 7,
-        isMostPopular: false,
-        isActive: true,
-        displayOrder: 1,
-        features: [],
-        discountPercent: 0,
-        originalPrice: null,
-        color: "",
-        totalPurchases: 0,
-        revenue: 0,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      PlanModel(
-        id: "p2",
-        planId: "2",
-        title: "Monthly",
-        description: "",
-        price: 99,
-        currency: "INR",
-        durationInDays: 30,
-        isMostPopular: true,
-        isActive: true,
-        displayOrder: 2,
-        features: [],
-        discountPercent: 0,
-        originalPrice: null,
-        color: "",
-        totalPurchases: 0,
-        revenue: 0,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-      PlanModel(
-        id: "p3",
-        planId: "3",
-        title: "6 Months",
-        description: "",
-        price: 270,
-        currency: "INR",
-        durationInDays: 180,
-        isMostPopular: false,
-        isActive: true,
-        displayOrder: 3,
-        features: [],
-        discountPercent: 0,
-        originalPrice: null,
-        color: "",
-        totalPurchases: 0,
-        revenue: 0,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      ),
-    ];
+    return [];
   }
 
   String _durationText(int days) {

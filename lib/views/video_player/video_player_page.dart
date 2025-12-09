@@ -1,19 +1,23 @@
 import 'dart:async';
-import 'package:app/models/movies_model.dart';
-import 'package:app/services/ad.dart';
+
+import 'package:cinezza/models/movies_model.dart';
+import 'package:cinezza/services/ad.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:get/get.dart';
-import 'package:video_player/video_player.dart';
-import 'package:screen_brightness/screen_brightness.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
+import 'package:get/get.dart';
+import 'package:screen_brightness/screen_brightness.dart';
+import 'package:video_player/video_player.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+
+import '../../controllers/home_controller.dart';
 import '../../controllers/splash_controller.dart';
 import '../../controllers/video_player_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/user_api_service.dart';
 import '../../services/volume_service.dart';
 import '../../services/watch_history_service.dart';
+import '../../widgets/movie_card.dart' show MovieCard;
 
 enum VideoFit { fill, fit }
 
@@ -28,6 +32,7 @@ class VideoPlayerPage extends StatefulWidget {
 
 class _VideoPlayerPageState extends State<VideoPlayerPage> {
   final AppVideoController controller = Get.put(AppVideoController());
+  HomeController hController = Get.find<HomeController>();
   Timer? _hideControlsTimer;
   Timer? _progressSaveTimer;
   bool _showControls = true;
@@ -47,6 +52,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   String? _currentVideoUrl;
   Map<String, dynamic>? _watchHistory;
   bool _isInitializing = true;
+  Rx<MoviesModel> moviesModel = MoviesModel().obs;
 
   // Advanced playback state
   bool _hasHandledCompletion = false;
@@ -56,6 +62,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   @override
   void initState() {
     super.initState();
+
     _initializeContent();
     _hideSystemVolumeUI();
     SystemChrome.setPreferredOrientations([
@@ -66,6 +73,12 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   }
 
   Future<void> _initializeContent() async {
+    moviesModel.value = await hController.fetchMoviesByCategory(
+      categoryId: widget.movie.categories?[0] ?? "",
+      limit: 100,
+    );
+
+    debugPrint(moviesModel.value.toString());
     if (widget.movie.seasons != null && widget.movie.seasons!.isNotEmpty) {
       await _loadWatchHistoryAndPlay();
       _decreaseTrialCount();
@@ -133,6 +146,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     try {
       final splash = Get.find<SplashController>();
       final user = splash.userModel.value?.user;
+
+      await UserService.increaseMovieView(movieId: widget.movie.uniqueId ?? "");
 
       if (user == null) return;
 
@@ -370,7 +385,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void _getInitialVolume() async {
     if (mounted) {
       setState(() => _volume = 0.5);
-      _applyVolume();
+      // _applyVolume();
     }
   }
 
@@ -384,22 +399,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   }
 
   void _applyVolume() {
-    double systemVolume;
-    double audioBoost;
+    FlutterVolumeController.setVolume(_volume);
 
-    if (_volume <= 0.5) {
-      systemVolume = _volume * 2;
-      audioBoost = 1.0;
-    } else {
-      systemVolume = 1.0;
-      audioBoost = (_volume - 0.5) * 2 + 1.0;
-    }
-
-    FlutterVolumeController.setVolume(systemVolume);
-
-    if (controller.videoController != null &&
-        controller.videoController!.value.isInitialized) {
-      controller.videoController!.setVolume(audioBoost);
+    if (controller.videoController?.value.isInitialized ?? false) {
+      controller.videoController!.setVolume(_volume);
     }
   }
 
@@ -461,7 +464,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         onWillPop: _onWillPop,
         child: Scaffold(
           backgroundColor: Colors.black,
-          body: _buildVideoPlayerSection(), // fullscreen = only player UI
+          body: _buildVideoPlayerSection(),
+          // fullscreen = only player UI
         ),
       );
     }
@@ -628,10 +632,46 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                   ),
                   child: _buildEpisodeSelector(isDark),
                 ),
+                AdService().native(),
               ],
             ),
           )
-        : AdService().native();
+        : Column(
+            children: [
+              AdService().native(),
+              Obx(() {
+                return Expanded(
+                  child: GridView.builder(
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 10,
+                    ),
+                    physics: const BouncingScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      childAspectRatio: 2 / 3.3,
+                      crossAxisSpacing: 10,
+                      mainAxisSpacing: 10,
+                    ),
+                    itemCount: moviesModel.value.data?.length ?? 0,
+                    itemBuilder: (context, index) {
+                      final movie = moviesModel.value.data![index];
+                      return MovieCard(
+                        movie: movie,
+                        index: 0,
+                        width: 200,
+                        isFromVideoPlayer: true,
+                        onTap: () {
+                          controller.togglePlayPause();
+                        },
+                      );
+                    },
+                  ),
+                );
+              }),
+            ],
+          );
   }
 
   Widget _buildEpisodeSelector(bool isDark) {

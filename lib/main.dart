@@ -1,4 +1,4 @@
-import 'package:app/controllers/premium_controller.dart';
+import 'package:cinezza/controllers/premium_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -15,11 +15,9 @@ void main() async {
 
   // Initialize GetStorage
   await GetStorage.init();
+
   // Initialize Google Mobile Ads
   MobileAds.instance.initialize();
-
-
-
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,

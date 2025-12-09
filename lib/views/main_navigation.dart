@@ -1,4 +1,4 @@
-import 'package:app/controllers/splash_controller.dart';
+import 'package:cinezza/controllers/splash_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../core/theme/app_colors.dart';

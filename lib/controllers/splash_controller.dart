@@ -1,8 +1,8 @@
 import 'dart:convert';
 
-import 'package:app/core/constants/api_end_points.dart';
-import 'package:app/models/remote_config_model.dart';
-import 'package:app/models/user_model.dart';
+import 'package:cinezza/core/constants/api_end_points.dart';
+import 'package:cinezza/models/remote_config_model.dart';
+import 'package:cinezza/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;

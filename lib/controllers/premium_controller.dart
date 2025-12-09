@@ -1,4 +1,4 @@
-import 'package:app/models/premium_plan_model.dart';
+import 'package:cinezza/models/premium_plan_model.dart';
 import 'package:get/get.dart';
 
 import '../api/apsl_api_call.dart';
@@ -7,6 +7,12 @@ import '../core/constants/api_end_points.dart';
 class PremiumController extends GetxController {
   RxList<PlanModel> premiumPlans = <PlanModel>[].obs;
   RxBool isPlanLoading = false.obs;
+
+  @override
+  void onInit() {
+    fetchPlans();
+    super.onInit();
+  }
 
   Future<void> fetchPlans() async {
     try {
@@ -23,8 +29,8 @@ class PremiumController extends GetxController {
         response.body,
       );
 
-      if (premiumPlanModel.plan.isNotEmpty) {
-        premiumPlans.value = premiumPlanModel.plan;
+      if (premiumPlanModel.plans.isNotEmpty) {
+        premiumPlans.value = premiumPlanModel.plans;
       }
     } catch (e) {
       isPlanLoading.value = true;
@@ -34,7 +40,4 @@ class PremiumController extends GetxController {
       isPlanLoading.value = false;
     }
   }
-
-
-  
 }

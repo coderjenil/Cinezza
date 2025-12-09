@@ -1,8 +1,10 @@
 import 'dart:async';
 
-import 'package:app/controllers/splash_controller.dart';
+import 'package:cinezza/controllers/splash_controller.dart';
+import 'package:cinezza/views/premium/premium_plan_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lottie/lottie.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../controllers/home_controller.dart';
@@ -12,7 +14,7 @@ import '../../core/theme/app_colors.dart';
 import '../../utils/dialogs/first_time_credit_dialog.dart';
 import '../../utils/dialogs/show_aleart.dart';
 import '../../widgets/auto_transition_widget.dart';
-import '../../widgets/banner_ad_widget.dart'; // ADD THIS IMPORT
+import '../../widgets/banner_ad_widget.dart';
 import '../../widgets/category_movie_list_widget.dart';
 
 class HomePage extends StatefulWidget {
@@ -41,18 +43,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
       await controller.fetchAllCategories();
       // Show dialog only if new user AND has credits
-      // if (splashController.isNewUser.value) {
-      showDialog(
-        context: Get.context!,
-        barrierDismissible: false,
-        builder: (_) => ModernCreditDialog(
-          credits: splashController.userModel.value!.user.trialCount,
-          onContinue: () {
-            Get.back();
-          },
-        ),
-      );
-      // }
+      if (splashController.isNewUser.value) {
+        showDialog(
+          context: Get.context!,
+          barrierDismissible: false,
+          builder: (_) => ModernCreditDialog(
+            credits: splashController.userModel.value!.user.trialCount,
+            onContinue: () {
+              Get.back();
+            },
+          ),
+        );
+      }
     } catch (e) {
       showAlert(context: context, message: e);
     } finally {
@@ -288,7 +290,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       snap: true,
       elevation: 0,
       backgroundColor: Colors.transparent,
-      toolbarHeight: 50,
+      toolbarHeight: 60,
       flexibleSpace: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -307,26 +309,26 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  gradient: AppColors.getPrimaryGradient(context),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(
-                  Icons.movie_filter_rounded,
-                  color: Colors.white,
-                  size: 18,
-                ),
-              ),
-              const SizedBox(width: 10),
+              // Container(
+              //   padding: const EdgeInsets.all(6),
+              //   decoration: BoxDecoration(
+              //     gradient: AppColors.getPrimaryGradient(context),
+              //     borderRadius: BorderRadius.circular(8),
+              //   ),
+              //   child: const Icon(
+              //     Icons.movie_filter_rounded,
+              //     color: Colors.white,
+              //     size: 18,
+              //   ),
+              // ),
+              // const SizedBox(width: 10),
               Expanded(
                 child: ShaderMask(
                   shaderCallback: (bounds) => AppColors.getPrimaryGradient(
                     context,
                   ).createShader(bounds),
                   child: const Text(
-                    'CinemaFlix',
+                    'Cinezza',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -342,15 +344,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 isDark,
               ),
               const SizedBox(width: 8),
-              Obx(
-                () => _buildCompactIconButton(
-                  context,
-                  themeController.isDarkMode.value
-                      ? Icons.light_mode_rounded
-                      : Icons.dark_mode_rounded,
-                  () => themeController.toggleTheme(),
-                  isDark,
-                  isTheme: true,
+              GestureDetector(
+                onTap: () {
+                  Get.to(() => PremiumPlansPage());
+                },
+                child: Lottie.asset(
+                  "assets/jsons/icon_1.json",
+                  height: 45,
+                  width: 45,
                 ),
               ),
             ],

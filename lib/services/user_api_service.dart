@@ -1,15 +1,20 @@
 import 'dart:convert';
 
-import 'package:app/controllers/splash_controller.dart';
-import 'package:app/models/movies_model.dart';
-import 'package:app/services/ad.dart';
-import 'package:app/views/premium/premium_plan_screen.dart';
+import 'package:cinezza/controllers/premium_controller.dart';
+import 'package:cinezza/controllers/splash_controller.dart';
+import 'package:cinezza/models/movies_model.dart';
+import 'package:cinezza/models/premium_plan_model.dart';
+import 'package:cinezza/services/ad.dart';
+import 'package:cinezza/services/app_service.dart';
+import 'package:cinezza/views/main_navigation.dart';
+import 'package:cinezza/views/premium/premium_plan_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 
 import '../api/apsl_api_call.dart';
 import '../core/constants/api_end_points.dart';
+import '../core/routes/app_routes.dart';
 import '../models/user_model.dart';
 import '../utils/device_helper.dart';
 import '../views/video_player/video_player_page.dart';
@@ -23,6 +28,7 @@ class UserService {
     int? trialCount,
     int? reelsUsage,
     String? lastActive,
+    bool isFromPlan = false,
   }) async {
     try {
       // Get device ID
@@ -73,27 +79,85 @@ class UserService {
     return null;
   }
 
-  void canWatchMovie({required Movie movie}) {
+  static Future<void> updatePlan({required String planId}) async {
+    try {
+      // Get device ID
+      final deviceId = await DeviceHelper.getDeviceId();
+
+      http.Response response = await ApiCall.callService(
+        requestInfo: APIRequestInfoObj(
+          requestType: HTTPRequestType.post,
+          url: ApiEndPoints.upgradePlan,
+          headers: ApiHeaders.getHeaders(),
+          parameter: {"device_id": deviceId, "planId": planId},
+          serviceName: 'Update User plan',
+          timeSecond: 30,
+        ),
+      );
+
+      http.Response user = await ApiCall.callService(
+        requestInfo: APIRequestInfoObj(
+          requestType: HTTPRequestType.post,
+          url: ApiEndPoints.registerUserUrl,
+          headers: ApiHeaders.getHeaders(),
+          parameter: {'device_id': deviceId},
+          serviceName: 'Register User',
+          timeSecond: 30,
+        ),
+      );
+
+      SplashController splashController = Get.find<SplashController>();
+      splashController.userModel.value = userModelFromJson(user.body);
+
+      debugPrint("$response");
+
+      PremiumController premiumController = Get.find<PremiumController>();
+
+      PlanModel plan = premiumController.premiumPlans.firstWhere(
+        (element) => element.planId == planId,
+      );
+      AppService.updateUserData(
+        deviceId: deviceId,
+        planPrice: plan.finalPrice.toString(),
+        planId: plan.title,
+      );
+    } catch (e) {
+      rethrow;
+    } finally {}
+  }
+
+  void canWatchMovie({required Movie movie, bool isFromVideoPlayer = false}) {
     final splash = Get.find<SplashController>();
     final user = splash.userModel.value?.user;
 
-    // If user data not loaded yet, prevent crash
-    if (user == null) {
-      debugPrint("⚠ User data unavailable, redirecting to premium.");
-      // Get.to(() => PremiumPlansPage());
-      return;
-    }
+    if (user == null) return;
 
     final bool isPremium = user.planActive == true;
-    final bool hasTrial = (user.trialCount) > 0;
+    final bool hasTrial = user.trialCount > 0;
+
+    if (isFromVideoPlayer) {
+      // Replace only the current video player page, keep Home page intact
+
+      Get.offUntil(
+        GetPageRoute(
+          page: () => MainNavigation(),
+          routeName: AppRoutes.mainNavigation,
+        ),
+        (route) => route.settings.name != AppRoutes.mainNavigation,
+      );
+    }
 
     if (isPremium || hasTrial) {
-      AdService().showAdWithCounter(
-        Get.context!,
-        onComplete: () {
-          Get.to(() => VideoPlayerPage(movie: movie));
-        },
-      );
+      if (isPremium) {
+        Get.to(() => VideoPlayerPage(movie: movie));
+      } else {
+        AdService().showAdWithCounter(
+          Get.context!,
+          onComplete: () {
+            Get.to(() => VideoPlayerPage(movie: movie));
+          },
+        );
+      }
     } else {
       AdService().showAdWithCounter(
         Get.context!,
@@ -115,6 +179,22 @@ class UserService {
           headers: ApiHeaders.getHeaders(),
           parameter: {"movie_name": movieName, "device_id": deviceId},
           serviceName: 'Request Movie',
+          timeSecond: 30,
+        ),
+      );
+    } catch (e) {
+      rethrow;
+    } finally {}
+  }
+
+  static Future<void> increaseMovieView({required String movieId}) async {
+    try {
+      http.Response response = await ApiCall.callService(
+        requestInfo: APIRequestInfoObj(
+          requestType: HTTPRequestType.post,
+          url: "${ApiEndPoints.increaseMovieViewCount}$movieId/view",
+          headers: ApiHeaders.getHeaders(),
+          serviceName: 'Increase Movie view count',
           timeSecond: 30,
         ),
       );

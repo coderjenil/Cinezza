@@ -1,5 +1,5 @@
-import 'package:app/controllers/home_controller.dart';
-import 'package:app/models/categories_model.dart';
+import 'package:cinezza/controllers/home_controller.dart';
+import 'package:cinezza/models/categories_model.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shimmer/shimmer.dart';
@@ -40,7 +40,7 @@ class _CategoryMoviesListState extends State<CategoryMoviesList>
   void initState() {
     super.initState();
     _moviesFuture = controller.fetchMoviesByCategory(
-      widget.category.categoryId ?? "",
+      categoryId: widget.category.categoryId ?? "",
     );
 
     _fadeController = AnimationController(
@@ -87,10 +87,8 @@ class _CategoryMoviesListState extends State<CategoryMoviesList>
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => Get.toNamed(
-                    AppRoutes.seeAll,
-                    arguments: widget.category,
-                  ),
+                  onTap: () =>
+                      Get.toNamed(AppRoutes.seeAll, arguments: widget.category),
                   child: Row(
                     spacing: 5,
                     children: [
@@ -180,6 +178,7 @@ class _CategoryMoviesListState extends State<CategoryMoviesList>
                           child: SizedBox(
                             width: widget.cardWidth,
                             child: MovieCard(
+                              onTap: () {},
                               movie: movies[index],
                               index: index,
                               width: widget.cardWidth,

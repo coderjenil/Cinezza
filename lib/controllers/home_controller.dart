@@ -74,12 +74,16 @@ class HomeController extends GetxController {
     }
   }
 
-  Future<MoviesModel> fetchMoviesByCategory(String categoryId) async {
+  Future<MoviesModel> fetchMoviesByCategory({
+    required String categoryId,
+    int limit = 10,
+  }) async {
     final res = await ApiCall.callService(
       requestInfo: APIRequestInfoObj(
         requestType: HTTPRequestType.get,
         headers: ApiHeaders.getHeaders(),
-        url: "${ApiEndPoints.getMoviesByCategory}$categoryId?page=1&limit=10",
+        url:
+            "${ApiEndPoints.getMoviesByCategory}$categoryId?page=1&limit=$limit",
       ),
     );
     return moviesModelFromJson(res.body);

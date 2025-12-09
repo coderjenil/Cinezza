@@ -1,7 +1,7 @@
-import 'package:app/controllers/splash_controller.dart';
+import 'package:cinezza/controllers/splash_controller.dart';
 
-import 'package:app/services/user_api_service.dart';
-import 'package:app/views/premium/premium_plan_screen.dart';
+import 'package:cinezza/services/user_api_service.dart';
+import 'package:cinezza/views/premium/premium_plan_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../core/theme/app_colors.dart';
