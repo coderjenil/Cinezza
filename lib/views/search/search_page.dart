@@ -256,12 +256,7 @@ class SearchPage extends StatelessWidget {
             itemCount: controller.searchResults.length,
             itemBuilder: (context, index) {
               final movie = controller.searchResults[index];
-              return MovieCard(
-                movie: movie,
-                index: 0,
-                width: cardWidth,
-                onTap: () {},
-              );
+              return MovieCard(movie: movie, index: 0, onTap: () {});
             },
           ),
         ),

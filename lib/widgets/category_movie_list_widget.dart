@@ -11,16 +11,13 @@ import '../widgets/movie_card.dart';
 class CategoryMoviesList extends StatefulWidget {
   final IconData icon;
   final bool showFire;
-  final double cardWidth;
-  final double sectionHeight;
+
   final CategoryModel category;
 
   const CategoryMoviesList({
     super.key,
     required this.icon,
     this.showFire = false,
-    required this.cardWidth,
-    required this.sectionHeight,
     required this.category,
   });
 
@@ -29,12 +26,15 @@ class CategoryMoviesList extends StatefulWidget {
 }
 
 class _CategoryMoviesListState extends State<CategoryMoviesList>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   late AnimationController _fadeController;
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
   late Future<MoviesModel> _moviesFuture;
-  HomeController controller = Get.find<HomeController>();
+  final HomeController controller = Get.find<HomeController>();
+
+  // Computed values
+  late bool isDark;
 
   @override
   void initState() {
@@ -60,6 +60,12 @@ class _CategoryMoviesListState extends State<CategoryMoviesList>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    isDark = Theme.of(context).brightness == Brightness.dark;
+  }
+
+  @override
   void dispose() {
     _fadeController.dispose();
     super.dispose();
@@ -67,10 +73,8 @@ class _CategoryMoviesListState extends State<CategoryMoviesList>
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return SizedBox(
-      height: widget.sectionHeight,
+      height: widget.category.isLandScape ?? false ? 150 : 190,
       child: Column(
         children: [
           Padding(
@@ -114,7 +118,7 @@ class _CategoryMoviesListState extends State<CategoryMoviesList>
                 // Show shimmer while loading
                 if (snapshot.connectionState == ConnectionState.waiting ||
                     snapshot.connectionState == ConnectionState.none) {
-                  return _buildShimmerLoader(isDark);
+                  return _buildShimmerLoader();
                 }
 
                 // Handle errors
@@ -175,14 +179,11 @@ class _CategoryMoviesListState extends State<CategoryMoviesList>
                       itemBuilder: (context, index) {
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
-                          child: SizedBox(
-                            width: widget.cardWidth,
-                            child: MovieCard(
-                              onTap: () {},
-                              movie: movies[index],
-                              index: index,
-                              width: widget.cardWidth,
-                            ),
+                          child: MovieCard(
+                            isLandScape: widget.category.isLandScape ?? false,
+                            onTap: () {},
+                            movie: movies[index],
+                            index: index,
                           ),
                         );
                       },
@@ -197,7 +198,14 @@ class _CategoryMoviesListState extends State<CategoryMoviesList>
     );
   }
 
-  Widget _buildShimmerLoader(bool isDark) {
+  Widget _buildShimmerLoader() {
+    // Calculate exact dimensions based on isLandScape property
+    final double cardWidth = widget.category.isLandScape ?? false ? 150 : 100;
+    final double cardHeight = widget.category.isLandScape ?? false ? 90 : 140;
+    final double titleMaxWidth = widget.category.isLandScape ?? false
+        ? 100
+        : 90;
+
     return Shimmer.fromColors(
       baseColor: isDark ? Colors.grey[850]! : Colors.grey[300]!,
       highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
@@ -211,25 +219,24 @@ class _CategoryMoviesListState extends State<CategoryMoviesList>
           return Padding(
             padding: const EdgeInsets.only(right: 8),
             child: SizedBox(
-              width: widget.cardWidth,
+              width: cardWidth,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Flexible(
-                    child: AspectRatio(
-                      aspectRatio: 2 / 3,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
+                  // Poster shimmer with exact dimensions
+                  Container(
+                    height: cardHeight,
+                    width: cardWidth,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(10),
                     ),
                   ),
                   const SizedBox(height: 4),
+                  // Title shimmer
                   Container(
-                    width: widget.cardWidth * 0.8,
-                    height: 10,
+                    width: titleMaxWidth,
+                    height: 10, // Match MovieCard title fontSize: 10
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(4),

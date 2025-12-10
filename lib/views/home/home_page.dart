@@ -31,32 +31,53 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   final SplashController splashController = Get.find<SplashController>();
   Timer? _autoScrollTimer;
 
+  // Computed values - calculated once per layout change
+  late double screenHeight;
+
+  late bool isDark;
+
   @override
   void initState() {
     super.initState();
     fetchCategories();
   }
 
-  fetchCategories() async {
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Calculate values only when dependencies change
+    _calculateDimensions();
+  }
+
+  void _calculateDimensions() {
+    screenHeight = MediaQuery.of(context).size.height;
+    isDark = Theme.of(context).brightness == Brightness.dark;
+  }
+
+  Future<void> fetchCategories() async {
     try {
       controller.isLoading.value = true;
 
       await controller.fetchAllCategories();
       // Show dialog only if new user AND has credits
       if (splashController.isNewUser.value) {
-        showDialog(
-          context: Get.context!,
-          barrierDismissible: false,
-          builder: (_) => ModernCreditDialog(
-            credits: splashController.userModel.value!.user.trialCount,
-            onContinue: () {
-              Get.back();
-            },
-          ),
-        );
+        if (mounted) {
+          showDialog(
+            context: context,
+            barrierDismissible: false,
+            builder: (_) => ModernCreditDialog(
+              credits: splashController.userModel.value!.user.trialCount,
+              onContinue: () {
+                Get.back();
+              },
+            ),
+          );
+        }
       }
     } catch (e) {
-      showAlert(context: context, message: e);
+      if (mounted) {
+        showAlert(context: context, message: e);
+      }
     } finally {
       controller.isLoading.value = false;
     }
@@ -71,14 +92,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
-    final cardWidth = (screenWidth - 40) / 3.5;
-    final cardHeight = cardWidth * 1.5;
-    final titleHeight = 28.0;
-    final totalSectionHeight = cardHeight + titleHeight + 30;
-
     return Scaffold(
       backgroundColor: isDark
           ? AppColors.darkBackground
@@ -95,7 +108,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               return CustomScrollView(
                 physics: const NeverScrollableScrollPhysics(),
                 slivers: [
-                  _buildCompactAppBar(context, isDark),
+                  _buildCompactAppBar(),
                   SliverToBoxAdapter(
                     child: Shimmer.fromColors(
                       baseColor: isDark ? Colors.grey[850]! : Colors.grey[300]!,
@@ -106,14 +119,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                       child: SizedBox(height: screenHeight * 0.22),
                     ),
                   ),
-                  SliverToBoxAdapter(
-                    child: _buildShimmerLoading(
-                      context,
-                      isDark,
-                      cardWidth,
-                      totalSectionHeight,
-                    ),
-                  ),
+                  SliverToBoxAdapter(child: _buildShimmerLoading()),
                 ],
               );
             }
@@ -122,7 +128,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               controller: _scrollController,
               physics: const BouncingScrollPhysics(),
               slivers: [
-                _buildCompactAppBar(context, isDark),
+                _buildCompactAppBar(),
 
                 // Auto-Transition Banner
                 SliverToBoxAdapter(
@@ -136,9 +142,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 ),
 
                 // Categories with Banner Ads
-                SliverToBoxAdapter(
-                  child: _buildCategoriesWithAds(cardWidth, totalSectionHeight),
-                ),
+                SliverToBoxAdapter(child: _buildCategoriesWithAds()),
 
                 const SliverToBoxAdapter(child: SizedBox(height: 20)),
               ],
@@ -150,7 +154,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   /// BUILD CATEGORIES WITH BANNER ADS EVERY 2 CATEGORIES
-  Widget _buildCategoriesWithAds(double cardWidth, double totalSectionHeight) {
+  Widget _buildCategoriesWithAds() {
     final categories = controller.nonAdultCategories
         .where((cat) => cat.name != "Trending")
         .toList();
@@ -168,14 +172,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             CategoryMoviesList(
               category: category,
               icon: Icons.movie_filter_rounded,
-              cardWidth: cardWidth,
-              sectionHeight: totalSectionHeight,
             ),
 
             // Add Banner Ad after every 2nd category
             if ((index + 1) % 2 == 0 && index < categories.length - 1)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
                 child: BannerAdWidget(),
               ),
           ],
@@ -184,12 +186,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildShimmerLoading(
-    BuildContext context,
-    bool isDark,
-    double cardWidth,
-    double sectionHeight,
-  ) {
+  Widget _buildShimmerLoading() {
     return Shimmer.fromColors(
       baseColor: isDark ? Colors.grey[850]! : Colors.grey[300]!,
       highlightColor: isDark ? Colors.grey[700]! : Colors.grey[100]!,
@@ -200,20 +197,20 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         itemCount: 4,
         itemBuilder: (context, index) {
           return Padding(
-            padding: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.only(bottom: 0),
             child: SizedBox(
-              height: sectionHeight,
+              height: 190, // Match CategoryMoviesList height for portrait
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title shimmer
+                  // Title shimmer - matches CategoryMoviesList padding
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
                     child: Row(
                       children: [
                         Container(
                           width: 120,
-                          height: 16,
+                          height: 15, // Match actual title fontSize: 15
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(4),
@@ -222,7 +219,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         const Spacer(),
                         Container(
                           width: 60,
-                          height: 12,
+                          height: 12, // Match "See All" fontSize: 12
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(4),
@@ -242,27 +239,27 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                         return Padding(
                           padding: const EdgeInsets.only(right: 8),
                           child: SizedBox(
-                            width: cardWidth,
+                            width: 100, // Match MovieCard portrait width
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                // Poster shimmer
-                                Flexible(
-                                  child: AspectRatio(
-                                    aspectRatio: 2 / 3,
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.white,
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
+                                // Poster shimmer - matches MovieCard dimensions
+                                Container(
+                                  height:
+                                      140, // Match MovieCard portrait height
+                                  width: 100, // Match MovieCard portrait width
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
                                   ),
                                 ),
-                                const SizedBox(height: 4),
+                                const SizedBox(
+                                  height: 4,
+                                ), // Match MovieCard spacing
                                 // Title shimmer
                                 Container(
-                                  width: cardWidth * 0.8,
-                                  height: 10,
+                                  width: 90, // Match _buildMovieTitle maxWidth
+                                  height: 10, // Match title fontSize: 10
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(4),
@@ -284,7 +281,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildCompactAppBar(BuildContext context, bool isDark) {
+  Widget _buildCompactAppBar() {
     return SliverAppBar(
       floating: true,
       snap: true,
@@ -309,19 +306,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              // Container(
-              //   padding: const EdgeInsets.all(6),
-              //   decoration: BoxDecoration(
-              //     gradient: AppColors.getPrimaryGradient(context),
-              //     borderRadius: BorderRadius.circular(8),
-              //   ),
-              //   child: const Icon(
-              //     Icons.movie_filter_rounded,
-              //     color: Colors.white,
-              //     size: 18,
-              //   ),
-              // ),
-              // const SizedBox(width: 10),
               Expanded(
                 child: ShaderMask(
                   shaderCallback: (bounds) => AppColors.getPrimaryGradient(
@@ -338,10 +322,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 ),
               ),
               _buildCompactIconButton(
-                context,
                 Icons.search_rounded,
                 () => Get.toNamed(AppRoutes.search),
-                isDark,
               ),
               const SizedBox(width: 8),
               GestureDetector(
@@ -362,10 +344,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   Widget _buildCompactIconButton(
-    BuildContext context,
     IconData icon,
-    VoidCallback onTap,
-    bool isDark, {
+    VoidCallback onTap, {
     bool isTheme = false,
   }) {
     return GestureDetector(
