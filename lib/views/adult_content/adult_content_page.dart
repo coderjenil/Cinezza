@@ -6,19 +6,43 @@ import '../../core/theme/app_colors.dart';
 import '../../widgets/banner_ad_widget.dart';
 import '../../widgets/category_movie_list_widget.dart';
 
-class AdultContentPage extends StatelessWidget {
-  AdultContentPage({super.key});
+class AdultContentPage extends StatefulWidget {
+  const AdultContentPage({super.key});
+
+  @override
+  State<AdultContentPage> createState() => _AdultContentPageState();
+}
+
+class _AdultContentPageState extends State<AdultContentPage> {
   final HomeController controller = Get.put(HomeController());
+
+  // Computed values - calculated once per layout change
+  late double screenWidth;
+  late double cardWidth;
+  late double cardHeight;
+  late double titleHeight;
+  late double totalSectionHeight;
+  late bool isDark;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Calculate values only when dependencies change
+    _calculateDimensions();
+  }
+
+  void _calculateDimensions() {
+    final mediaQuery = MediaQuery.of(context);
+    screenWidth = mediaQuery.size.width;
+    cardWidth = (screenWidth - 40) / 3.5;
+    cardHeight = cardWidth * 1.5;
+    titleHeight = 28.0;
+    totalSectionHeight = cardHeight + titleHeight + 30;
+    isDark = Theme.of(context).brightness == Brightness.dark;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final screenWidth = MediaQuery.of(context).size.width;
-
-    final cardWidth = (screenWidth - 40) / 3.5;
-    final cardHeight = cardWidth * 1.5;
-    final titleHeight = 28.0;
-    final totalSectionHeight = cardHeight + titleHeight + 30;
-
     return Scaffold(
       backgroundColor: isDark
           ? AppColors.darkBackground
@@ -32,7 +56,7 @@ class AdultContentPage extends StatelessWidget {
         child: SafeArea(
           child: Obx(() {
             if (!controller.ageVerified.value) {
-              return _buildAgeVerification(context, isDark);
+              return _buildAgeVerification();
             }
 
             if (controller.isLoading.value) {
@@ -47,7 +71,7 @@ class AdultContentPage extends StatelessWidget {
             return CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
-                _buildHeader(context, isDark),
+                _buildHeader(),
 
                 SliverToBoxAdapter(
                   child: ListView.builder(
@@ -59,14 +83,12 @@ class AdultContentPage extends StatelessWidget {
                         CategoryMoviesList(
                           category: controller.adultCategories[index],
                           icon: Icons.movie_filter_rounded,
-                          cardWidth: cardWidth,
-                          sectionHeight: totalSectionHeight,
                         ),
                         // Add Banner Ad after every 2nd category
                         if ((index + 1) % 2 == 0 &&
                             index < controller.adultCategories.length - 1)
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 12),
                             child: BannerAdWidget(),
                           ),
                       ],
@@ -83,7 +105,7 @@ class AdultContentPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(BuildContext context, bool isDark) {
+  Widget _buildHeader() {
     return SliverAppBar(
       floating: true,
       snap: true,
@@ -151,7 +173,7 @@ class AdultContentPage extends StatelessWidget {
     );
   }
 
-  Widget _buildAgeVerification(BuildContext context, bool isDark) {
+  Widget _buildAgeVerification() {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),

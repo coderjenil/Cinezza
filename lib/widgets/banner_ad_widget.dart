@@ -19,7 +19,12 @@ class _BannerAdWidgetState extends State<BannerAdWidget>
   bool _isBannerLoaded = false;
   bool _disposed = false;
 
-  SplashController splash = Get.find<SplashController>();
+  final SplashController splash = Get.find<SplashController>();
+
+  // Computed values - calculated once
+  late bool adsEnabled;
+  late bool isPremium;
+  late String adUnitId;
 
   @override
   bool get wantKeepAlive => true;
@@ -27,13 +32,24 @@ class _BannerAdWidgetState extends State<BannerAdWidget>
   @override
   void initState() {
     super.initState();
+    _initializeAdSettings();
+  }
 
-    // 🚫 Don't load ad if disabled or user is premium
-    final adsEnabled =
-        splash.remoteConfigModel.value?.config.isAdsEnable ?? true;
-    final isPremium = splash.userModel.value?.user.planActive ?? false;
+  void _initializeAdSettings() {
+    // Calculate ad settings once in initState
+    adsEnabled = splash.remoteConfigModel.value?.config.isAdsEnable ?? true;
+    isPremium = splash.userModel.value?.user.planActive ?? false;
 
-    if (adsEnabled && !isPremium) {
+    // Determine ad unit ID once
+    final remoteId = splash.remoteConfigModel.value?.config.adIds.banner ?? "";
+    adUnitId = remoteId.isNotEmpty
+        ? remoteId
+        : Platform.isAndroid
+        ? "ca-app-pub-3940256099942544/6300978111"
+        : "ca-app-pub-3940256099942544/2934735716";
+
+    // Load banner only if conditions are met
+    if ((adsEnabled && !isPremium) || widget.forceShow) {
       _loadBanner();
     } else {
       debugPrint("🚫 Ads disabled or user is premium — banner will NOT load.");
@@ -43,30 +59,26 @@ class _BannerAdWidgetState extends State<BannerAdWidget>
   void _loadBanner() {
     if (_disposed) return;
 
-    final remoteId = splash.remoteConfigModel.value?.config.adIds.banner ?? "";
-
-    final adUnit = remoteId.isNotEmpty
-        ? remoteId
-        : Platform.isAndroid
-        ? "ca-app-pub-3940256099942544/6300978111"
-        : "ca-app-pub-3940256099942544/2934735716";
-
-    debugPrint("📡 Loading Banner Ad: $adUnit");
+    debugPrint("📡 Loading Banner Ad: $adUnitId");
 
     _bannerAd = BannerAd(
-      adUnitId: adUnit,
+      adUnitId: adUnitId,
       size: AdSize.banner,
       request: const AdRequest(),
       listener: BannerAdListener(
         onAdLoaded: (ad) {
           if (_disposed || !mounted) return;
-          setState(() => _isBannerLoaded = true);
+          if (mounted) {
+            setState(() => _isBannerLoaded = true);
+          }
           debugPrint("🎉 Banner Ad Loaded: ${ad.hashCode}");
         },
         onAdFailedToLoad: (ad, error) {
           debugPrint("❌ Banner Ad Failed: $error");
           ad.dispose();
-          if (!_disposed) setState(() => _isBannerLoaded = false);
+          if (!_disposed && mounted) {
+            setState(() => _isBannerLoaded = false);
+          }
         },
       ),
     )..load();
@@ -76,6 +88,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget>
   void dispose() {
     _disposed = true;
     _bannerAd?.dispose();
+    _bannerAd = null;
     super.dispose();
   }
 
@@ -85,36 +98,29 @@ class _BannerAdWidgetState extends State<BannerAdWidget>
 
     // 👉 Force show for UI testing
     if (widget.forceShow) {
-      return _isBannerLoaded ? _bannerBox() : _loadingShimmer();
+      return _isBannerLoaded ? _buildBannerBox() : _buildLoadingShimmer();
     }
 
-    // 🚫 Double check again (safety) before displaying
-    final adsEnabled =
-        splash.remoteConfigModel.value?.config.isAdsEnable ?? true;
-    final isPremium = splash.userModel.value?.user.planActive ?? false;
-
+    // 🚫 Return empty widget if ads disabled or user is premium
     if (!adsEnabled || isPremium) {
-      // If banner already loaded incorrectly, dispose it safely
-      if (_bannerAd != null) {
-        _bannerAd?.dispose();
-        _bannerAd = null;
-      }
       return const SizedBox.shrink();
     }
 
-    return _isBannerLoaded ? _bannerBox() : _loadingShimmer();
+    return _isBannerLoaded ? _buildBannerBox() : _buildLoadingShimmer();
   }
 
-  Widget _bannerBox() {
+  Widget _buildBannerBox() {
+    if (_bannerAd == null) return const SizedBox.shrink();
+
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
       height: 60,
       alignment: Alignment.center,
       child: AdWidget(ad: _bannerAd!),
     );
   }
 
-  Widget _loadingShimmer() {
+  Widget _buildLoadingShimmer() {
     return CommonShimmer(
       colorOpacity: 0.3,
       child: Container(

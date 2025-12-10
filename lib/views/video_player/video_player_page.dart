@@ -488,6 +488,41 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     );
   }
 
+  Widget _buildMovieInfo() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.movie.movieName ?? 'Unknown Title',
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDescription() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Text(
+        widget.movie.description ?? 'No description available',
+        style: const TextStyle(
+          fontSize: 14,
+          color: Colors.white70,
+          height: 1.5,
+        ),
+        maxLines: 4,
+      ),
+    );
+  }
+
   // ---------------- VIDEO AREA ----------------
 
   Widget _buildVideoPlayerSection() {
@@ -637,30 +672,54 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             ),
           )
         : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              AdService().native(),
+              _buildMovieInfo(),
+              _buildDescription(),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 20,
+                ),
+                child: AdService().native(),
+              ),
+
+              Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Text(
+                  'Related Movies',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
               Obx(() {
                 return Expanded(
-                  child: GridView.builder(
+                  child: ListView.separated(
+                    separatorBuilder: (context, index) => SizedBox(width: 10),
                     shrinkWrap: true,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 20,
-                      vertical: 10,
+                      horizontal: 12,
+                      vertical: 5,
                     ),
+                    scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      childAspectRatio: 2 / 3.3,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                    ),
+                    // gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                    //   crossAxisCount: 3,
+                    //   childAspectRatio: 2 / 3.3,
+                    //   crossAxisSpacing: 10,
+                    //   mainAxisSpacing: 10,
+                    // ),
                     itemCount: moviesModel.value.data?.length ?? 0,
                     itemBuilder: (context, index) {
                       final movie = moviesModel.value.data![index];
                       return MovieCard(
                         movie: movie,
                         index: 0,
-                        width: 200,
+
                         isFromVideoPlayer: true,
                         onTap: () {
                           controller.togglePlayPause();
@@ -684,7 +743,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         // Premium Header with Gradient Accent
         Container(
           padding: const EdgeInsets.all(4),
-          margin: const EdgeInsets.symmetric(horizontal: 16),
+          // margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
@@ -698,6 +757,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
+                margin: EdgeInsets.only(left: 10),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
@@ -717,32 +777,19 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                 ),
               ),
               const Spacer(),
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(8),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+              TextButton.icon(
+                onPressed: _showEpisodeSelector,
+                style: TextButton.styleFrom(
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 8,
+                  ),
                 ),
-                child: TextButton.icon(
-                  onPressed: _showEpisodeSelector,
-                  style: TextButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                  ),
-                  icon: const Icon(Icons.grid_view_rounded, size: 16),
-                  label: const Text(
-                    'View All',
-                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
-                  ),
+                icon: const Icon(Icons.grid_view_rounded, size: 16),
+                label: const Text(
+                  'View All',
+                  style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
                 ),
               ),
             ],

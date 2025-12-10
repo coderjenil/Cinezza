@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import 'controllers/home_controller.dart';
 import 'controllers/splash_controller.dart';
 import 'controllers/theme_controller.dart';
 import 'core/routes/app_routes.dart';
@@ -23,7 +24,7 @@ void main() async {
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
-
+  Get.put(HomeController());
   Get.put(SplashController());
   Get.put(PremiumController());
 

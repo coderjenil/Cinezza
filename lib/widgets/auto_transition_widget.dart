@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:cinezza/services/user_api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
@@ -121,167 +122,80 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
     }
 
     // Show actual banner with animation
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      child: AnimatedBuilder(
-        animation: _transitionController,
-        builder: (context, child) {
-          final progress = _transitionController.value;
-          final currentMovie = moviesModel.data?[_currentBannerIndex];
-          final nextMovie = moviesModel.data?[_nextBannerIndex];
-          final easeProgress = Curves.easeInOutCubic.transform(progress);
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () {
+        if (moviesModel.data != null) {
+          UserService().canWatchMovie(
+            movie: moviesModel.data![_currentBannerIndex],
+          );
+        }
+      },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: AnimatedBuilder(
+          animation: _transitionController,
+          builder: (context, child) {
+            final progress = _transitionController.value;
+            final currentMovie = moviesModel.data?[_currentBannerIndex];
+            final nextMovie = moviesModel.data?[_nextBannerIndex];
+            final easeProgress = Curves.easeInOutCubic.transform(progress);
 
-          return Stack(
-            children: [
-              // Background - Next image
-              Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.primary.withOpacity(0.15),
-                      blurRadius: 10,
-                      offset: const Offset(0, 5),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(14),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      Transform.scale(
-                        scale: 0.8 + (easeProgress * 0.2),
-                        child: CachedImage(
-                          imageUrl:
-                              nextMovie?.thumbUrl2 ?? nextMovie?.thumbUrl ?? '',
-                          fit: BoxFit.cover,
-                        ),
-                      ),
-                      Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
-                            colors: [
-                              Colors.transparent,
-                              Colors.black.withOpacity(0.8),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 12,
-                        left: 14,
-                        right: 14,
-                        child: Opacity(
-                          opacity: easeProgress,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  nextMovie?.movieName ?? '',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    shadows: [
-                                      Shadow(
-                                        color: Colors.black54,
-                                        blurRadius: 8,
-                                      ),
-                                    ],
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(
-                                  gradient: AppColors.getPrimaryGradient(
-                                    context,
-                                  ),
-                                  shape: BoxShape.circle,
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Theme.of(
-                                        context,
-                                      ).colorScheme.primary.withOpacity(0.5),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 3),
-                                    ),
-                                  ],
-                                ),
-                                child: const Icon(
-                                  Icons.play_arrow_rounded,
-                                  color: Colors.white,
-                                  size: 18,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+            return Stack(
+              children: [
+                // Background - Next image
+                Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(
+                          context,
+                        ).colorScheme.primary.withOpacity(0.15),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
                       ),
                     ],
                   ),
-                ),
-              ),
-
-              // Foreground - Current image
-              Opacity(
-                opacity: 1.0 - easeProgress,
-                child: Transform.scale(
-                  scale: 1.0 + (easeProgress * 0.3),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Theme.of(context).colorScheme.primary
-                              .withOpacity(0.3 * (1 - easeProgress)),
-                          blurRadius: 20,
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(14),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          CachedImage(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(14),
+                    child: Stack(
+                      fit: StackFit.expand,
+                      children: [
+                        Transform.scale(
+                          scale: 0.8 + (easeProgress * 0.2),
+                          child: CachedImage(
                             imageUrl:
-                                currentMovie?.thumbUrl2 ??
-                                currentMovie?.thumbUrl ??
+                                nextMovie?.thumbUrl2 ??
+                                nextMovie?.thumbUrl ??
                                 '',
                             fit: BoxFit.cover,
                           ),
-                          Container(
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: [
-                                  Colors.transparent,
-                                  Colors.black.withOpacity(0.8),
-                                ],
-                              ),
+                        ),
+                        Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withOpacity(0.8),
+                              ],
                             ),
                           ),
-                          Positioned(
-                            bottom: 12,
-                            left: 14,
-                            right: 14,
+                        ),
+                        Positioned(
+                          bottom: 12,
+                          left: 14,
+                          right: 14,
+                          child: Opacity(
+                            opacity: easeProgress,
                             child: Row(
                               children: [
                                 Expanded(
                                   child: Text(
-                                    currentMovie?.movieName ?? '',
+                                    nextMovie?.movieName ?? '',
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
@@ -323,15 +237,115 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
                               ],
                             ),
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Foreground - Current image
+                Opacity(
+                  opacity: 1.0 - easeProgress,
+                  child: Transform.scale(
+                    scale: 1.0 + (easeProgress * 0.3),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 4),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context).colorScheme.primary
+                                .withOpacity(0.3 * (1 - easeProgress)),
+                            blurRadius: 20,
+                            offset: const Offset(0, 5),
+                          ),
                         ],
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            CachedImage(
+                              imageUrl:
+                                  currentMovie?.thumbUrl2 ??
+                                  currentMovie?.thumbUrl ??
+                                  '',
+                              fit: BoxFit.cover,
+                            ),
+                            Container(
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                                    Colors.transparent,
+                                    Colors.black.withOpacity(0.8),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              bottom: 12,
+                              left: 14,
+                              right: 14,
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      currentMovie?.movieName ?? '',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        shadows: [
+                                          Shadow(
+                                            color: Colors.black54,
+                                            blurRadius: 8,
+                                          ),
+                                        ],
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      gradient: AppColors.getPrimaryGradient(
+                                        context,
+                                      ),
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                              .withOpacity(0.5),
+                                          blurRadius: 12,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Icon(
+                                      Icons.play_arrow_rounded,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
     );
   }

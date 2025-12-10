@@ -1,9 +1,9 @@
 import 'dart:math';
 import 'package:cinezza/core/theme/app_colors.dart';
-import 'package:cinezza/services/app_service.dart';
 import 'package:cinezza/services/user_api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../controllers/premium_controller.dart';
 import '../../models/premium_plan_model.dart';
 import '../../services/payment_service.dart';
