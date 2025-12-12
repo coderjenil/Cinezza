@@ -902,7 +902,7 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
           const SizedBox(height: 8),
 
           Text(
-            "Cancel anytime • Money-back guarantee",
+            "Cancel anytime",
             textAlign: TextAlign.center,
             style: TextStyle(color: textColor.withOpacity(0.6), fontSize: 11),
           ),

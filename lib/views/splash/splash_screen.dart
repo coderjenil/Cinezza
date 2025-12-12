@@ -1,7 +1,8 @@
-import 'dart:math';
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import '../../controllers/splash_controller.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/payment_service.dart';
@@ -22,7 +23,6 @@ class _SplashScreenState extends State<SplashScreen>
 
   late SplashController splashController;
 
-  // Solid gradient fallback (always shows, no network dependency)
   bool _imageLoaded = false;
 
   @override
@@ -31,24 +31,24 @@ class _SplashScreenState extends State<SplashScreen>
 
     splashController = Get.put(SplashController());
 
-    // Controllers (UNCHANGED – same logic & durations)
+    // Reduced animation durations for faster startup
     _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
+      duration: const Duration(milliseconds: 600),
       vsync: this,
     )..forward();
 
     _wordmarkController = AnimationController(
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 900),
       vsync: this,
     )..forward();
 
     _progressController = AnimationController(
-      duration: const Duration(milliseconds: 1400),
+      duration: const Duration(milliseconds: 1000),
       vsync: this,
     )..forward();
 
     _ambientController = AnimationController(
-      duration: const Duration(milliseconds: 4000),
+      duration: const Duration(milliseconds: 3000),
       vsync: this,
     )..repeat(reverse: true);
 
@@ -70,27 +70,18 @@ class _SplashScreenState extends State<SplashScreen>
       backgroundColor: const Color(0xFF000000),
       body: Stack(
         children: [
-          // Background - Gradient first, image optional overlay
           _buildReliableBackdrop(),
-
-          // Ambient Glow
           _buildOptimizedAmbientGlow(),
-
-          // Main Content (brand + progress)
           _buildMainLayout(),
-
-          // Edge Fade
           _buildEdgeFade(),
         ],
       ),
     );
   }
 
-  // ==================== RELIABLE BACKDROP ====================
   Widget _buildReliableBackdrop() {
     return Stack(
       children: [
-        // ALWAYS VISIBLE: Gradient fallback (no network dependency)
         Positioned.fill(
           child: Container(
             decoration: const BoxDecoration(
@@ -106,11 +97,8 @@ class _SplashScreenState extends State<SplashScreen>
             ),
           ),
         ),
-
-        // OPTIONAL: Network image overlay (if loads successfully)
         Positioned.fill(
           child: Image.network(
-            // Cinematic / theater style BG (copyright-free Unsplash)
             'https://images.unsplash.com/photo-1594908900066-3f47337549d8?w=1400&q=90',
             fit: BoxFit.cover,
             loadingBuilder: (context, child, loadingProgress) {
@@ -129,8 +117,6 @@ class _SplashScreenState extends State<SplashScreen>
             },
           ),
         ),
-
-        // Deep overlay for readability (always visible)
         Positioned.fill(
           child: Container(
             decoration: BoxDecoration(
@@ -150,7 +136,6 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  // ==================== OPTIMIZED AMBIENT GLOW ====================
   Widget _buildOptimizedAmbientGlow() {
     return AnimatedBuilder(
       animation: _ambientController,
@@ -177,17 +162,13 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  // ==================== MAIN LAYOUT (Brand center, progress bottom) ====================
   Widget _buildMainLayout() {
     return SafeArea(
       child: FadeTransition(
         opacity: _fadeController.drive(CurveTween(curve: Curves.easeOut)),
         child: Column(
           children: [
-            // Centered brand content
             Expanded(child: Center(child: _buildBrandCard())),
-
-            // Bottom progress (OTT-style)
             Padding(
               padding: const EdgeInsets.only(bottom: 40.0),
               child: _buildSmoothProgress(),
@@ -198,7 +179,6 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  // ==================== GLASS BRAND CARD ====================
   Widget _buildBrandCard() {
     return AnimatedBuilder(
       animation: _wordmarkController,
@@ -264,7 +244,6 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  // ==================== SINGLE-LINE WORDMARK ====================
   Widget _buildSingleLineWordmark() {
     final screenWidth = MediaQuery.of(context).size.width;
 
@@ -286,9 +265,7 @@ class _SplashScreenState extends State<SplashScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: screenWidth - 64, // padding safety
-              ),
+              constraints: BoxConstraints(maxWidth: screenWidth - 64),
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: ShaderMask(
@@ -322,13 +299,10 @@ class _SplashScreenState extends State<SplashScreen>
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Subtle underline accent
             TweenAnimationBuilder<double>(
               tween: Tween(begin: 0.0, end: 1.0),
-              duration: const Duration(milliseconds: 900),
+              duration: const Duration(milliseconds: 700),
               curve: Curves.easeOut,
               builder: (context, value, child) {
                 return Opacity(
@@ -356,10 +330,8 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  // Letter spacing calculation (UNCHANGED logic)
   double _calculateOptimalLetterSpacing(double screenWidth) {
-    // CINEZZA = 7 characters
-    final baseTextWidth = 7 * 45; // ~315px
+    final baseTextWidth = 7 * 45;
     final availableWidth = screenWidth - 64;
 
     if (availableWidth < baseTextWidth + 140) {
@@ -371,7 +343,6 @@ class _SplashScreenState extends State<SplashScreen>
     }
   }
 
-  // ==================== SMOOTH PROGRESS ====================
   Widget _buildSmoothProgress() {
     return AnimatedBuilder(
       animation: _progressController,
@@ -379,7 +350,7 @@ class _SplashScreenState extends State<SplashScreen>
         final fadeAnim = Tween<double>(begin: 0.0, end: 1.0).animate(
           CurvedAnimation(
             parent: _progressController,
-            curve: const Interval(0.3, 0.9, curve: Curves.easeIn),
+            curve: const Interval(0.2, 0.8, curve: Curves.easeIn),
           ),
         );
 
@@ -409,7 +380,6 @@ class _SplashScreenState extends State<SplashScreen>
                   borderRadius: BorderRadius.circular(999),
                   child: Stack(
                     children: [
-                      // Background track
                       Container(
                         height: 3,
                         decoration: BoxDecoration(
@@ -417,10 +387,8 @@ class _SplashScreenState extends State<SplashScreen>
                           color: Colors.white.withValues(alpha: 0.08),
                         ),
                       ),
-
-                      // Active progress
                       AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
+                        duration: const Duration(milliseconds: 200),
                         curve: Curves.easeOut,
                         height: 3,
                         width: 272 * controller.progress.value,
@@ -443,8 +411,6 @@ class _SplashScreenState extends State<SplashScreen>
                           ],
                         ),
                       ),
-
-                      // Shimmer head
                       if (controller.progress.value > 0.05)
                         Positioned(
                           left:
@@ -478,7 +444,6 @@ class _SplashScreenState extends State<SplashScreen>
     );
   }
 
-  // ==================== EDGE FADE ====================
   Widget _buildEdgeFade() {
     return Positioned.fill(
       child: IgnorePointer(
