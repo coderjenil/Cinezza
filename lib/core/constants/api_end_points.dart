@@ -1,7 +1,7 @@
 class ApiEndPoints {
-  static const String baseURL = "http://192.168.1.85:3000/api/";
+  // static const String baseURL = "http://192.168.1.85:3000/api/";
 
-  // static const String baseURL = "https://www.quizonline.live/api/";
+  static const String baseURL = "https://www.quizonline.live/api/";
   static const String registerUser = "${baseURL}auth/login";
   static const String getAllCategories = "${baseURL}categories/";
   static const String getMoviesByCategory = "${baseURL}movies/category/";

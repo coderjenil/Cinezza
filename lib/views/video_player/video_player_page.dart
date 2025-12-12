@@ -1400,7 +1400,41 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         ),
       ),
       child: Column(
-        children: [_buildTopControls(), Spacer(), _buildBottomControls()],
+        children: [
+          _buildTopControls(),
+          Expanded(
+            child: Center(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  _buildControlButton(
+                    Icons.replay_10_rounded,
+                    () => controller.seekRelative(-10),
+                    size: _isFullscreen ? 34 : 26,
+                  ),
+                  const SizedBox(width: 26),
+                  Obx(
+                    () => _buildControlButton(
+                      controller.isPlaying.value
+                          ? Icons.pause_rounded
+                          : Icons.play_arrow_rounded,
+                      controller.togglePlayPause,
+                      size: _isFullscreen ? 52 : 38,
+                      isPrimary: true,
+                    ),
+                  ),
+                  const SizedBox(width: 26),
+                  _buildControlButton(
+                    Icons.forward_10_rounded,
+                    () => controller.seekRelative(10),
+                    size: _isFullscreen ? 34 : 26,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          _buildBottomControls(),
+        ],
       ),
     );
   }
@@ -1475,101 +1509,66 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         final position = controller.position.value;
         final duration = controller.duration.value;
 
-        return Column(
+        return Row(
           children: [
-            Row(
-              children: [
-                Text(
-                  _formatDuration(position),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: SliderTheme(
-                    data: SliderThemeData(
-                      trackHeight: 3,
-                      thumbShape: const RoundSliderThumbShape(
-                        enabledThumbRadius: 7,
-                      ),
-                      overlayShape: const RoundSliderOverlayShape(
-                        overlayRadius: 14,
-                      ),
-                      activeTrackColor: AppColors.primary,
-                      inactiveTrackColor: Colors.white.withOpacity(0.3),
-                      thumbColor: AppColors.primary,
-                      overlayColor: AppColors.primary.withOpacity(0.3),
-                    ),
-                    child: Slider(
-                      value: position.inMilliseconds
-                          .clamp(0, duration.inMilliseconds)
-                          .toDouble(),
-                      min: 0,
-                      max: duration.inMilliseconds.toDouble().clamp(
-                        1,
-                        double.infinity,
-                      ),
-                      onChanged: (value) {
-                        controller.seekTo(
-                          Duration(milliseconds: value.toInt()),
-                        );
-                      },
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  _formatDuration(duration),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-                IconButton(
-                  icon: Icon(
-                    _isFullscreen
-                        ? Icons.fullscreen_exit_rounded
-                        : Icons.fullscreen_rounded,
-                    color: Colors.white,
-                    size: 22,
-                  ),
-                  onPressed: _toggleFullscreen,
-                  tooltip: _isFullscreen ? 'Exit fullscreen' : 'Fullscreen',
-                ),
-              ],
-            ),
-            Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildControlButton(
-                    Icons.replay_10_rounded,
-                    () => controller.seekRelative(-10),
-                    size: _isFullscreen ? 34 : 26,
-                  ),
-                  const SizedBox(width: 26),
-                  Obx(
-                    () => _buildControlButton(
-                      controller.isPlaying.value
-                          ? Icons.pause_rounded
-                          : Icons.play_arrow_rounded,
-                      controller.togglePlayPause,
-                      size: _isFullscreen ? 52 : 38,
-                      isPrimary: true,
-                    ),
-                  ),
-                  const SizedBox(width: 26),
-                  _buildControlButton(
-                    Icons.forward_10_rounded,
-                    () => controller.seekRelative(10),
-                    size: _isFullscreen ? 34 : 26,
-                  ),
-                ],
+            Text(
+              _formatDuration(position),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
               ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: SliderTheme(
+                data: SliderThemeData(
+                  trackHeight: 3,
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 7,
+                  ),
+                  overlayShape: const RoundSliderOverlayShape(
+                    overlayRadius: 14,
+                  ),
+                  activeTrackColor: AppColors.primary,
+                  inactiveTrackColor: Colors.white.withOpacity(0.3),
+                  thumbColor: AppColors.primary,
+                  overlayColor: AppColors.primary.withOpacity(0.3),
+                ),
+                child: Slider(
+                  value: position.inMilliseconds
+                      .clamp(0, duration.inMilliseconds)
+                      .toDouble(),
+                  min: 0,
+                  max: duration.inMilliseconds.toDouble().clamp(
+                    1,
+                    double.infinity,
+                  ),
+                  onChanged: (value) {
+                    controller.seekTo(Duration(milliseconds: value.toInt()));
+                  },
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _formatDuration(duration),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            IconButton(
+              icon: Icon(
+                _isFullscreen
+                    ? Icons.fullscreen_exit_rounded
+                    : Icons.fullscreen_rounded,
+                color: Colors.white,
+                size: 22,
+              ),
+              onPressed: _toggleFullscreen,
+              tooltip: _isFullscreen ? 'Exit fullscreen' : 'Fullscreen',
             ),
           ],
         );
