@@ -152,7 +152,7 @@ class _CategoryMoviesListState extends State<CategoryMoviesList>
 
                 // We have data - show it with animation!
                 final movies = snapshot.data!.data!;
-                movies.sort((b, a) {
+                movies.sort((a, b) {
                   final aDate = a.createdAt != null
                       ? DateTime.tryParse(a.createdAt!) ?? DateTime(1970)
                       : DateTime(1970);

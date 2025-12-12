@@ -212,26 +212,16 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
                                   ),
                                 ),
                                 Container(
-                                  padding: const EdgeInsets.all(10),
                                   decoration: BoxDecoration(
-                                    gradient: AppColors.getPrimaryGradient(
-                                      context,
-                                    ),
                                     shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary.withOpacity(0.5),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 3),
-                                      ),
-                                    ],
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 0.5,
+                                    ),
                                   ),
-                                  child: const Icon(
-                                    Icons.play_arrow_rounded,
-                                    color: Colors.white,
-                                    size: 18,
+                                  child: Image.asset(
+                                    "assets/images/play.png",
+                                    height: 30,
                                   ),
                                 ),
                               ],
@@ -310,27 +300,16 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
                                     ),
                                   ),
                                   Container(
-                                    padding: const EdgeInsets.all(10),
                                     decoration: BoxDecoration(
-                                      gradient: AppColors.getPrimaryGradient(
-                                        context,
-                                      ),
                                       shape: BoxShape.circle,
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                              .withOpacity(0.5),
-                                          blurRadius: 12,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ],
+                                      border: Border.all(
+                                        color: Colors.white,
+                                        width: 0.5,
+                                      ),
                                     ),
-                                    child: const Icon(
-                                      Icons.play_arrow_rounded,
-                                      color: Colors.white,
-                                      size: 18,
+                                    child: Image.asset(
+                                      "assets/images/play.png",
+                                      height: 30,
                                     ),
                                   ),
                                 ],

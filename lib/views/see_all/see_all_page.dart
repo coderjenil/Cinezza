@@ -72,7 +72,7 @@ class _SeeAllPageState extends State<SeeAllPage> {
         // Create mutable copy and sort by latest first
         final newMovies = List<Movie>.from(moviesModel.data!);
 
-        newMovies.sort((b, a) {
+        newMovies.sort((a, b) {
           final aDate = a.createdAt != null
               ? DateTime.tryParse(a.createdAt!) ?? DateTime(1970)
               : DateTime(1970);

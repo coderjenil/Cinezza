@@ -41,20 +41,20 @@ class SplashController extends GetxController {
       loadingMessage.value = 'Loading app info...';
       progress.value = 0.1;
       packageInfo = await PackageInfo.fromPlatform();
-      await Future.delayed(Duration(milliseconds: 300));
+      update();
 
       // Step 2: Fetch Remote Config
       loadingMessage.value = 'Checking server status...';
       progress.value = 0.2;
       await fetchConfig();
       AdService().setDelay(3);
-      await Future.delayed(Duration(milliseconds: 300));
+      update();
 
       // Step 3: Check Maintenance Mode
       if (remoteConfigModel.value?.config.maintenanceMode == true) {
         loadingMessage.value = 'Server under maintenance';
         progress.value = 0.0;
-        await Future.delayed(Duration(milliseconds: 500));
+        update();
         _showMaintenanceDialog();
         return;
       }
@@ -65,7 +65,7 @@ class SplashController extends GetxController {
           (remoteConfigModel.value?.config.forceUpdate ?? true)) {
         loadingMessage.value = 'Update available';
         progress.value = 0.0;
-        await Future.delayed(Duration(milliseconds: 500));
+        update();
         _showUpdateDialog(updateRequired);
         return;
       }
@@ -74,24 +74,24 @@ class SplashController extends GetxController {
       loadingMessage.value = 'Getting device info...';
       progress.value = 0.4;
       await _getDeviceId();
-      await Future.delayed(Duration(milliseconds: 500));
+      update();
 
       // Step 6: Register User
       loadingMessage.value = 'Registering device...';
       progress.value = 0.6;
       await _registerUser();
-      await Future.delayed(Duration(milliseconds: 500));
+      update();
 
       // Step 7: Initialize Services
       loadingMessage.value = 'Preparing app...';
       progress.value = 0.9;
       await _initializeServices();
-      await Future.delayed(Duration(milliseconds: 500));
+      update();
 
       // Step 8: Complete
       loadingMessage.value = 'Ready!';
       progress.value = 1.0;
-      await Future.delayed(Duration(milliseconds: 500));
+      update();
 
       isLoading.value = false;
       Get.offAllNamed(AppRoutes.mainNavigation);
@@ -101,7 +101,6 @@ class SplashController extends GetxController {
       if (remoteConfigModel.value?.config.maintenanceMode == true) {
         _showMaintenanceDialog();
       } else {
-        await Future.delayed(Duration(seconds: 2));
         Get.offAllNamed(AppRoutes.mainNavigation);
       }
     }
@@ -255,8 +254,8 @@ class SplashController extends GetxController {
   }
 
   Future<void> _initializeServices() async {
-    // Initialize other services here
-    await Future.delayed(Duration(milliseconds: 500));
+    // Initialize other services here if needed
+    // Removed artificial delay
   }
 
   // Retry initialization if failed
@@ -285,6 +284,6 @@ class SplashController extends GetxController {
       );
     } catch (e) {
       rethrow;
-    } finally {}
+    }
   }
 }

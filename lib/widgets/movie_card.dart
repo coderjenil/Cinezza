@@ -174,23 +174,11 @@ class _MovieCardState extends State<MovieCard>
       bottom: 4,
       right: 4,
       child: Container(
-        padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          gradient: AppColors.getPrimaryGradient(context),
           shape: BoxShape.circle,
-          boxShadow: [
-            BoxShadow(
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.4),
-              blurRadius: 6,
-              offset: const Offset(0, 2),
-            ),
-          ],
+          border: Border.all(color: Colors.white, width: 0.5),
         ),
-        child: const Icon(
-          Icons.play_arrow_rounded,
-          color: Colors.white,
-          size: 12,
-        ),
+        child: Image.asset("assets/images/play.png", height: 20),
       ),
     );
   }
