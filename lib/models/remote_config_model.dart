@@ -38,7 +38,6 @@ class RemoteConfigModel {
 class Config {
   int defaultTrialCount;
   int defaultReelsUsageLimit;
-  bool enableTrial;
   String appVersion;
   bool maintenanceMode;
   Reels reels;
@@ -55,11 +54,13 @@ class Config {
   bool forceUpdate;
   int reelIncreaseTime;
   bool showMature;
+  String rzpId;
+  int adDelayCount;
 
   Config({
     required this.defaultTrialCount,
     required this.defaultReelsUsageLimit,
-    required this.enableTrial,
+
     required this.appVersion,
     required this.maintenanceMode,
     required this.reels,
@@ -76,12 +77,14 @@ class Config {
     required this.forceUpdate,
     required this.reelIncreaseTime,
     required this.showMature,
+    required this.rzpId,
+    required this.adDelayCount,
   });
 
   factory Config.fromJson(Map<String, dynamic> json) => Config(
     defaultTrialCount: json["default_trial_count"],
     defaultReelsUsageLimit: json["default_reels_usage_limit"],
-    enableTrial: json["enable_trial"],
+
     appVersion: json["app_version"],
     maintenanceMode: json["maintenance_mode"],
     reels: Reels.fromJson(json["Reels"]),
@@ -98,13 +101,14 @@ class Config {
     forceUpdate: json["force_update"],
     reelIncreaseTime: json["reel_view_increase_time"],
     showMature: json["show_mature_content"],
+    rzpId: json["rzp_id"],
+    adDelayCount: json["ad_delay_count"],
   );
 
   Map<String, dynamic> toJson() => {
     "default_trial_count": defaultTrialCount,
     "default_reels_usage_limit": defaultReelsUsageLimit,
-    
-    "enable_trial": enableTrial,
+
     "app_version": appVersion,
     "maintenance_mode": maintenanceMode,
     "Reels": reels.toJson(),
@@ -121,6 +125,8 @@ class Config {
     "force_update": forceUpdate,
     "reel_view_increase_time": reelIncreaseTime,
     "show_mature_content": showMature,
+    "rzp_id": rzpId,
+    "ad_delay_count": adDelayCount,
   };
 }
 

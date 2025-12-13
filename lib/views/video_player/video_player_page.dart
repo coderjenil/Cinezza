@@ -1473,7 +1473,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               }
             },
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 4, height: 10),
           Expanded(
             child: Text(
               widget.movie.movieName ?? 'Video Player',

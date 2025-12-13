@@ -1,4 +1,4 @@
-package com.example.app // Change this to your package name
+package djmixer.virtual.remixsong.remixsong // Change this to your package name
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
