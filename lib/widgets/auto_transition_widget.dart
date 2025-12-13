@@ -23,12 +23,9 @@ class AutoTransitionBanner extends StatefulWidget {
   State<AutoTransitionBanner> createState() => _AutoTransitionBannerState();
 }
 
-class _AutoTransitionBannerState extends State<AutoTransitionBanner>
-    with TickerProviderStateMixin {
-  late AnimationController _transitionController;
-
-  int _currentBannerIndex = 0;
-  int _nextBannerIndex = 1;
+class _AutoTransitionBannerState extends State<AutoTransitionBanner> {
+  late PageController _pageController;
+  int _currentPage = 0;
   Timer? _autoScrollTimer;
 
   MoviesModel moviesModel = MoviesModel();
@@ -37,12 +34,7 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
   @override
   void initState() {
     super.initState();
-
-    _transitionController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-
+    _pageController = PageController();
     fetchCategory();
   }
 
@@ -60,7 +52,7 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
         setState(() {
           _isLoading = false;
         });
-        _startAutoTransition();
+        _startAutoScroll();
       }
     } catch (e) {
       if (mounted) {
@@ -71,22 +63,16 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
     }
   }
 
-  void _startAutoTransition() {
+  void _startAutoScroll() {
     _autoScrollTimer?.cancel();
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (mounted && (moviesModel.data?.isNotEmpty ?? false)) {
-        setState(() {
-          _nextBannerIndex =
-              (_currentBannerIndex + 1) % (moviesModel.data?.length ?? 1);
-        });
-
-        _transitionController.forward(from: 0).then((_) {
-          if (mounted) {
-            setState(() {
-              _currentBannerIndex = _nextBannerIndex;
-            });
-          }
-        });
+      if (mounted && _pageController.hasClients) {
+        final nextPage = (_currentPage + 1) % (moviesModel.data?.length ?? 1);
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 600),
+          curve: Curves.easeInOutCubic,
+        );
       }
     });
   }
@@ -94,7 +80,7 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
   @override
   void dispose() {
     _autoScrollTimer?.cancel();
-    _transitionController.dispose();
+    _pageController.dispose();
     super.dispose();
   }
 
@@ -121,38 +107,33 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
       );
     }
 
-    // Show actual banner with animation
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        if (moviesModel.data != null) {
-          UserService().canWatchMovie(
-            movie: moviesModel.data![_currentBannerIndex],
-          );
-        }
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: AnimatedBuilder(
-          animation: _transitionController,
-          builder: (context, child) {
-            final progress = _transitionController.value;
-            final currentMovie = moviesModel.data?[_currentBannerIndex];
-            final nextMovie = moviesModel.data?[_nextBannerIndex];
-            final easeProgress = Curves.easeInOutCubic.transform(progress);
+    final movies = moviesModel.data!;
 
-            return Stack(
-              children: [
-                // Background - Next image
-                Container(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Stack(
+        children: [
+          // PageView Carousel
+          PageView.builder(
+            controller: _pageController,
+            onPageChanged: (index) {
+              setState(() => _currentPage = index);
+            },
+            itemCount: movies.length,
+            itemBuilder: (context, index) {
+              final movie = movies[index];
+              return GestureDetector(
+                onTap: () => UserService().canWatchMovie(movie: movie),
+                child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 4),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(14),
                     boxShadow: [
                       BoxShadow(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withOpacity(0.15),
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withOpacity(0.15),
                         blurRadius: 10,
                         offset: const Offset(0, 5),
                       ),
@@ -163,15 +144,9 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        Transform.scale(
-                          scale: 0.8 + (easeProgress * 0.2),
-                          child: CachedImage(
-                            imageUrl:
-                                nextMovie?.thumbUrl2 ??
-                                nextMovie?.thumbUrl ??
-                                '',
-                            fit: BoxFit.cover,
-                          ),
+                        CachedImage(
+                          imageUrl: movie.thumbUrl2 ?? movie.thumbUrl ?? '',
+                          fit: BoxFit.cover,
                         ),
                         Container(
                           decoration: BoxDecoration(
@@ -189,142 +164,83 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
                           bottom: 12,
                           left: 14,
                           right: 14,
-                          child: Opacity(
-                            opacity: easeProgress,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    nextMovie?.movieName ?? '',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.black54,
-                                          blurRadius: 8,
-                                        ),
-                                      ],
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  movie.movieName ?? '',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    shadows: [
+                                      Shadow(
+                                        color: Colors.black54,
+                                        blurRadius: 8,
+                                      ),
+                                    ],
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Colors.white,
+                                    width: 0.5,
                                   ),
                                 ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 0.5,
-                                    ),
-                                  ),
-                                  child: Image.asset(
-                                    "assets/images/play.png",
-                                    height: 30,
-                                  ),
+                                child: Image.asset(
+                                  "assets/images/play.png",
+                                  height: 30,
                                 ),
-                              ],
-                            ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
                   ),
                 ),
+              );
+            },
+          ),
 
-                // Foreground - Current image
-                Opacity(
-                  opacity: 1.0 - easeProgress,
-                  child: Transform.scale(
-                    scale: 1.0 + (easeProgress * 0.3),
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Theme.of(context).colorScheme.primary
-                                .withOpacity(0.3 * (1 - easeProgress)),
-                            blurRadius: 20,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
+          // Bottom Indicators
+          Positioned(
+            bottom: 20,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: List.generate(
+                movies.length,
+                    (index) => AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  margin: const EdgeInsets.symmetric(horizontal: 4),
+                  width: _currentPage == index ? 24 : 8,
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: _currentPage == index
+                        ? Colors.white
+                        : Colors.white.withOpacity(0.4),
+                    borderRadius: BorderRadius.circular(4),
+                    boxShadow: _currentPage == index
+                        ? [
+                      BoxShadow(
+                        color: Colors.white.withOpacity(0.5),
+                        blurRadius: 8,
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: Stack(
-                          fit: StackFit.expand,
-                          children: [
-                            CachedImage(
-                              imageUrl:
-                                  currentMovie?.thumbUrl2 ??
-                                  currentMovie?.thumbUrl ??
-                                  '',
-                              fit: BoxFit.cover,
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.black.withOpacity(0.8),
-                                  ],
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              bottom: 12,
-                              left: 14,
-                              right: 14,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      currentMovie?.movieName ?? '',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        shadows: [
-                                          Shadow(
-                                            color: Colors.black54,
-                                            blurRadius: 8,
-                                          ),
-                                        ],
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 0.5,
-                                      ),
-                                    ),
-                                    child: Image.asset(
-                                      "assets/images/play.png",
-                                      height: 30,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    ]
+                        : [],
                   ),
                 ),
-              ],
-            );
-          },
-        ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

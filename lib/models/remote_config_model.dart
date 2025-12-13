@@ -38,7 +38,7 @@ class RemoteConfigModel {
 class Config {
   int defaultTrialCount;
   int defaultReelsUsageLimit;
-  bool enableTrial;
+  // bool enableTrial;
   String appVersion;
   bool maintenanceMode;
   Reels reels;
@@ -59,7 +59,7 @@ class Config {
   Config({
     required this.defaultTrialCount,
     required this.defaultReelsUsageLimit,
-    required this.enableTrial,
+    // required this.enableTrial,
     required this.appVersion,
     required this.maintenanceMode,
     required this.reels,
@@ -81,7 +81,7 @@ class Config {
   factory Config.fromJson(Map<String, dynamic> json) => Config(
     defaultTrialCount: json["default_trial_count"],
     defaultReelsUsageLimit: json["default_reels_usage_limit"],
-    enableTrial: json["enable_trial"],
+    // enableTrial: json["enable_trial"],
     appVersion: json["app_version"],
     maintenanceMode: json["maintenance_mode"],
     reels: Reels.fromJson(json["Reels"]),
@@ -104,7 +104,7 @@ class Config {
     "default_trial_count": defaultTrialCount,
     "default_reels_usage_limit": defaultReelsUsageLimit,
     
-    "enable_trial": enableTrial,
+    // "enable_trial": enableTrial,
     "app_version": appVersion,
     "maintenance_mode": maintenanceMode,
     "Reels": reels.toJson(),
