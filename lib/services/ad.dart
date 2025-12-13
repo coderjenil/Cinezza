@@ -252,9 +252,17 @@ class AdService {
   }
 
   // ----------------------- Native -----------------------
-  Widget native() {
+  Widget native({
+    TemplateType type = TemplateType.small,
+    bool useCustomLayout = false,
+    double? height,
+  }) {
     if (_isPremium()) return const SizedBox.shrink();
-    return _NativeAdLoader();
+    return NativeAdLoader(
+      type: type,
+      useCustomLayout: useCustomLayout,
+      height: height,
+    );
   }
 
   // ----------------------- UI Loader -----------------------
@@ -281,12 +289,23 @@ class AdService {
 }
 
 // ------------------------- Native Loader Widget -------------------------
-class _NativeAdLoader extends StatefulWidget {
+class NativeAdLoader extends StatefulWidget {
+  final TemplateType type;
+  final bool useCustomLayout;
+  final double? height;
+
+  const NativeAdLoader({
+    super.key,
+    this.type = TemplateType.small,
+    this.useCustomLayout = false,
+    this.height,
+  });
+
   @override
-  State<_NativeAdLoader> createState() => _NativeAdLoaderState();
+  State<NativeAdLoader> createState() => _NativeAdLoaderState();
 }
 
-class _NativeAdLoaderState extends State<_NativeAdLoader> {
+class _NativeAdLoaderState extends State<NativeAdLoader> {
   NativeAd? _ad;
   bool loaded = false;
 
@@ -297,25 +316,63 @@ class _NativeAdLoaderState extends State<_NativeAdLoader> {
   }
 
   void _load() {
-    _ad = NativeAd(
-      adUnitId: AdService.nativeId,
-      request: const AdRequest(),
-      listener: NativeAdListener(
-        onAdLoaded: (_) => setState(() => loaded = true),
-        onAdFailedToLoad: (_, __) => setState(() => loaded = false),
-      ),
-      nativeTemplateStyle: NativeTemplateStyle(
-        templateType: TemplateType.small,
-      ),
-    );
+    if (widget.useCustomLayout) {
+      // Custom layout - prevents content cutting
+      _ad = NativeAd(
+        adUnitId: AdService.nativeId,
+        factoryId: 'customAdFactory',
+        request: const AdRequest(),
+        listener: NativeAdListener(
+          onAdLoaded: (_) {
+            print('✅ Custom native ad loaded successfully');
+            if (mounted) setState(() => loaded = true);
+          },
+          onAdFailedToLoad: (ad, error) {
+            print('❌ Custom native ad failed to load: $error');
+            ad.dispose();
+            if (mounted) setState(() => loaded = false);
+          },
+        ),
+      );
+    } else {
+      // Template layout
+      _ad = NativeAd(
+        adUnitId: AdService.nativeId,
+        request: const AdRequest(),
+        listener: NativeAdListener(
+          onAdLoaded: (_) {
+            print('✅ Template native ad loaded successfully');
+            if (mounted) setState(() => loaded = true);
+          },
+          onAdFailedToLoad: (ad, error) {
+            print('❌ Template native ad failed to load: $error');
+            ad.dispose();
+            if (mounted) setState(() => loaded = false);
+          },
+        ),
+        nativeTemplateStyle: NativeTemplateStyle(templateType: widget.type),
+      );
+    }
 
     _ad!.load();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!loaded) return const SizedBox.shrink();
-    return SizedBox(height: 110, child: AdWidget(ad: _ad!));
+    if (!loaded || _ad == null) return const SizedBox.shrink();
+
+    // Use provided height or default based on layout type
+    final adHeight =
+        widget.height ??
+        (widget.useCustomLayout
+            ? 250.0
+            : (widget.type == TemplateType.medium ? 250.0 : 110.0));
+
+    return SizedBox(
+      height: adHeight,
+      width: double.infinity,
+      child: AdWidget(ad: _ad!),
+    );
   }
 
   @override

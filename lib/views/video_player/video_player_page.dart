@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_volume_controller/flutter_volume_controller.dart';
 import 'package:get/get.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:video_player/video_player.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
@@ -33,25 +34,34 @@ class VideoPlayerPage extends StatefulWidget {
 class _VideoPlayerPageState extends State<VideoPlayerPage> {
   final AppVideoController controller = Get.put(AppVideoController());
   HomeController hController = Get.find<HomeController>();
+
   Timer? _hideControlsTimer;
   Timer? _progressSaveTimer;
+
   bool _showControls = true;
   bool _isLocked = false;
   bool _isFullscreen = false;
+
   VideoFit _videoFit = VideoFit.fit;
+
   double _brightness = 0.5;
   double _volume = 0.5;
+
   bool _isDraggingBrightness = false;
   bool _isDraggingVolume = false;
   bool _isSwiping = false;
+
   Duration? _swipeSeekPosition;
 
   int _selectedSeasonIndex = 0;
   int _currentSeasonIndex = 0;
   int _currentEpisodeIndex = 0;
+
   String? _currentVideoUrl;
   Map<String, dynamic>? _watchHistory;
+
   bool _isInitializing = true;
+
   Rx<MoviesModel> moviesModel = MoviesModel().obs;
 
   // Advanced playback state
@@ -65,10 +75,12 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
     _initializeContent();
     _hideSystemVolumeUI();
+
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
+
     WakelockPlus.enable();
   }
 
@@ -574,15 +586,36 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       child: Container(
         color: Colors.black,
         child: Stack(
-          fit: StackFit.expand,
+          // fit: StackFit.expand,
           children: [
             _buildVideoWithFit(),
             if (_isDraggingBrightness) _buildBrightnessIndicator(),
             if (_isDraggingVolume) _buildVolumeIndicator(),
             if (_isSwiping) _buildSeekIndicator(),
+            controller.isPlaying.value || !_isFullscreen
+                ? const SizedBox()
+                : Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          height: 250,
+                          width: 300,
+                          child: AdService().native(
+                            type: TemplateType.medium,
+                            useCustomLayout: true,
+                            height: 250,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
             // Controls + lock button
             if (_showControls && !_isLocked) _buildControlsOverlay(),
             if (_showControls || _isLocked) _buildLockButton(),
+
             if (controller.isBuffering.value)
               Center(
                 child: Container(
@@ -667,7 +700,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                   ),
                   child: _buildEpisodeSelector(isDark),
                 ),
-                AdService().native(),
+                SizedBox(height: 110, child: AdService().native()),
               ],
             ),
           )
@@ -682,7 +715,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                   horizontal: 12,
                   vertical: 20,
                 ),
-                child: AdService().native(),
+                child: SizedBox(height: 110, child: AdService().native()),
               ),
 
               Padding(
@@ -699,7 +732,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               Obx(() {
                 return Expanded(
                   child: ListView.separated(
-                    separatorBuilder: (context, index) => SizedBox(width: 10),
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 10),
                     shrinkWrap: true,
                     padding: const EdgeInsets.symmetric(
                       horizontal: 12,
@@ -707,19 +741,12 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                     ),
                     scrollDirection: Axis.horizontal,
                     physics: const BouncingScrollPhysics(),
-                    // gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    //   crossAxisCount: 3,
-                    //   childAspectRatio: 2 / 3.3,
-                    //   crossAxisSpacing: 10,
-                    //   mainAxisSpacing: 10,
-                    // ),
                     itemCount: moviesModel.value.data?.length ?? 0,
                     itemBuilder: (context, index) {
                       final movie = moviesModel.value.data![index];
                       return MovieCard(
                         movie: movie,
                         index: 0,
-
                         isFromVideoPlayer: true,
                         onTap: () {
                           controller.togglePlayPause();
@@ -743,7 +770,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         // Premium Header with Gradient Accent
         Container(
           padding: const EdgeInsets.all(4),
-          // margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
@@ -757,7 +783,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                margin: EdgeInsets.only(left: 10),
+                margin: const EdgeInsets.only(left: 10),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
@@ -797,7 +823,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         ),
         const SizedBox(height: 20),
 
-        // SIMPLE CLEAN SEASON TABBAR (Like Featured/Popular)
+        // SIMPLE CLEAN SEASON TABBAR
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           height: 40,
@@ -820,9 +846,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Season Text
                       Text(
-                        'Season ${season.seasonNo?.toString() ?? (index + 1).toString()}',
+                        'Season ${season.seasonNo?.toString() ?? (index + 1)}',
                         style: TextStyle(
                           color: isSelected
                               ? (isDark ? Colors.white : Colors.black)
@@ -834,8 +859,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                           letterSpacing: 0.2,
                         ),
                       ),
-
-                      // Bottom Indicator Line
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 250),
                         height: 3,
@@ -854,7 +877,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         ),
 
         const SizedBox(height: 20),
-
         // COMPACT HORIZONTAL EPISODE CAROUSEL
         SizedBox(
           height: 170,
@@ -936,7 +958,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 240, // Reduced from 280
+        width: 240,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           color: isCurrentEpisode
@@ -953,7 +975,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             Expanded(
               child: Stack(
                 children: [
-                  // Thumbnail Image
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: Container(
@@ -998,7 +1019,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                             ),
                     ),
                   ),
-
                   // Gradient Overlay
                   Positioned.fill(
                     child: ClipRRect(
@@ -1382,7 +1402,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       ),
     );
   }
-
   // ---------------- CONTROLS OVER VIDEO ----------------
 
   Widget _buildControlsOverlay() {
@@ -1402,37 +1421,40 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       child: Column(
         children: [
           _buildTopControls(),
-          Expanded(
-            child: Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildControlButton(
-                    Icons.replay_10_rounded,
-                    () => controller.seekRelative(-10),
-                    size: _isFullscreen ? 34 : 26,
-                  ),
-                  const SizedBox(width: 26),
-                  Obx(
-                    () => _buildControlButton(
-                      controller.isPlaying.value
-                          ? Icons.pause_rounded
-                          : Icons.play_arrow_rounded,
-                      controller.togglePlayPause,
-                      size: _isFullscreen ? 52 : 38,
-                      isPrimary: true,
+          controller.isPlaying.value || !_isFullscreen
+              ? Expanded(
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildControlButton(
+                          Icons.replay_10_rounded,
+                          () => controller.seekRelative(-10),
+                          size: _isFullscreen ? 34 : 26,
+                        ),
+                        const SizedBox(width: 26),
+                        Obx(
+                          () => _buildControlButton(
+                            controller.isPlaying.value
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            controller.togglePlayPause,
+                            size: _isFullscreen ? 52 : 38,
+                            isPrimary: true,
+                          ),
+                        ),
+                        const SizedBox(width: 26),
+                        _buildControlButton(
+                          Icons.forward_10_rounded,
+                          () => controller.seekRelative(10),
+                          size: _isFullscreen ? 34 : 26,
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 26),
-                  _buildControlButton(
-                    Icons.forward_10_rounded,
-                    () => controller.seekRelative(10),
-                    size: _isFullscreen ? 34 : 26,
-                  ),
-                ],
-              ),
-            ),
-          ),
+                )
+              : Spacer(),
+
           _buildBottomControls(),
         ],
       ),
@@ -1509,67 +1531,107 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         final position = controller.position.value;
         final duration = controller.duration.value;
 
-        return Row(
+        return Column(
           children: [
-            Text(
-              _formatDuration(position),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: SliderTheme(
-                data: SliderThemeData(
-                  trackHeight: 3,
-                  thumbShape: const RoundSliderThumbShape(
-                    enabledThumbRadius: 7,
+            Row(
+              children: [
+                Text(
+                  _formatDuration(position),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
-                  overlayShape: const RoundSliderOverlayShape(
-                    overlayRadius: 14,
-                  ),
-                  activeTrackColor: AppColors.primary,
-                  inactiveTrackColor: Colors.white.withOpacity(0.3),
-                  thumbColor: AppColors.primary,
-                  overlayColor: AppColors.primary.withOpacity(0.3),
                 ),
-                child: Slider(
-                  value: position.inMilliseconds
-                      .clamp(0, duration.inMilliseconds)
-                      .toDouble(),
-                  min: 0,
-                  max: duration.inMilliseconds.toDouble().clamp(
-                    1,
-                    double.infinity,
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SliderTheme(
+                    data: SliderThemeData(
+                      trackHeight: 3,
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 7,
+                      ),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 14,
+                      ),
+                      activeTrackColor: AppColors.primary,
+                      inactiveTrackColor: Colors.white.withOpacity(0.3),
+                      thumbColor: AppColors.primary,
+                      overlayColor: AppColors.primary.withOpacity(0.3),
+                    ),
+                    child: Slider(
+                      value: position.inMilliseconds
+                          .clamp(0, duration.inMilliseconds)
+                          .toDouble(),
+                      min: 0,
+                      max: duration.inMilliseconds.toDouble().clamp(
+                        1,
+                        double.infinity,
+                      ),
+                      onChanged: (value) {
+                        controller.seekTo(
+                          Duration(milliseconds: value.toInt()),
+                        );
+                      },
+                    ),
                   ),
-                  onChanged: (value) {
-                    controller.seekTo(Duration(milliseconds: value.toInt()));
-                  },
                 ),
-              ),
+                const SizedBox(width: 8),
+                Text(
+                  _formatDuration(duration),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                IconButton(
+                  icon: Icon(
+                    _isFullscreen
+                        ? Icons.fullscreen_exit_rounded
+                        : Icons.fullscreen_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
+                  onPressed: _toggleFullscreen,
+                  tooltip: _isFullscreen ? 'Exit fullscreen' : 'Fullscreen',
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            Text(
-              _formatDuration(duration),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            IconButton(
-              icon: Icon(
-                _isFullscreen
-                    ? Icons.fullscreen_exit_rounded
-                    : Icons.fullscreen_rounded,
-                color: Colors.white,
-                size: 22,
-              ),
-              onPressed: _toggleFullscreen,
-              tooltip: _isFullscreen ? 'Exit fullscreen' : 'Fullscreen',
-            ),
+            controller.isPlaying.value || !_isFullscreen
+                ? SizedBox()
+                : Padding(
+                    padding: const EdgeInsets.only(bottom: 0),
+                    child: Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildControlButton(
+                            Icons.replay_10_rounded,
+                            () => controller.seekRelative(-10),
+                            size: _isFullscreen ? 20 : 26,
+                          ),
+                          const SizedBox(width: 26),
+                          Obx(
+                            () => _buildControlButton(
+                              controller.isPlaying.value
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded,
+                              controller.togglePlayPause,
+                              size: _isFullscreen ? 25 : 38,
+                              isPrimary: true,
+                            ),
+                          ),
+                          const SizedBox(width: 26),
+                          _buildControlButton(
+                            Icons.forward_10_rounded,
+                            () => controller.seekRelative(10),
+                            size: _isFullscreen ? 20 : 26,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
           ],
         );
       }),
@@ -1634,7 +1696,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       ),
     );
   }
-
   // ---------------- INDICATORS ----------------
 
   Widget _buildBrightnessIndicator() {
@@ -1761,7 +1822,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       ),
     );
   }
-
   // ---------------- GESTURE HANDLERS ----------------
 
   void _handleDoubleTap(TapDownDetails details) {
@@ -1830,7 +1890,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       _swipeSeekPosition = null;
     });
   }
-
   // ---------------- UTILS ----------------
 
   String _formatDuration(Duration duration) {

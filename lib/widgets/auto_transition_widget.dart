@@ -34,6 +34,10 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
   MoviesModel moviesModel = MoviesModel();
   bool _isLoading = true;
 
+  // For swipe detection
+  double _dragStartX = 0;
+  double _dragUpdateX = 0;
+
   @override
   void initState() {
     super.initState();
@@ -75,17 +79,37 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
     _autoScrollTimer?.cancel();
     _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
       if (mounted && (moviesModel.data?.isNotEmpty ?? false)) {
-        setState(() {
-          _nextBannerIndex =
-              (_currentBannerIndex + 1) % (moviesModel.data?.length ?? 1);
-        });
+        _navigateToNext();
+      }
+    });
+  }
 
-        _transitionController.forward(from: 0).then((_) {
-          if (mounted) {
-            setState(() {
-              _currentBannerIndex = _nextBannerIndex;
-            });
-          }
+  void _navigateToNext() {
+    setState(() {
+      _nextBannerIndex =
+          (_currentBannerIndex + 1) % (moviesModel.data?.length ?? 1);
+    });
+
+    _transitionController.forward(from: 0).then((_) {
+      if (mounted) {
+        setState(() {
+          _currentBannerIndex = _nextBannerIndex;
+        });
+      }
+    });
+  }
+
+  void _navigateToPrevious() {
+    setState(() {
+      _nextBannerIndex = (_currentBannerIndex - 1 < 0)
+          ? (moviesModel.data?.length ?? 1) - 1
+          : _currentBannerIndex - 1;
+    });
+
+    _transitionController.forward(from: 0).then((_) {
+      if (mounted) {
+        setState(() {
+          _currentBannerIndex = _nextBannerIndex;
         });
       }
     });
@@ -129,6 +153,30 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
           UserService().canWatchMovie(
             movie: moviesModel.data![_currentBannerIndex],
           );
+        }
+      },
+      onHorizontalDragStart: (details) {
+        _dragStartX = details.globalPosition.dx;
+      },
+      onHorizontalDragUpdate: (details) {
+        _dragUpdateX = details.globalPosition.dx;
+      },
+      onHorizontalDragEnd: (details) {
+        double dragDistance = _dragUpdateX - _dragStartX;
+
+        // Minimum swipe distance to trigger navigation (50 pixels)
+        if (dragDistance.abs() > 50) {
+          // Reset auto-scroll timer after manual swipe
+          _startAutoTransition();
+
+          // Swipe left (next)
+          if (dragDistance < 0) {
+            _navigateToNext();
+          }
+          // Swipe right (previous)
+          else {
+            _navigateToPrevious();
+          }
         }
       },
       child: Padding(
