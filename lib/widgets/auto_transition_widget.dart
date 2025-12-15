@@ -1,11 +1,10 @@
-import 'dart:async';
-
+import 'package:carousel_slider/carousel_slider.dart';
+import 'package:cinezza/core/theme/app_colors.dart';
 import 'package:cinezza/services/user_api_service.dart';
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../controllers/home_controller.dart';
-import '../core/theme/app_colors.dart';
 import '../models/movies_model.dart';
 import 'cached_image.dart';
 
@@ -23,30 +22,17 @@ class AutoTransitionBanner extends StatefulWidget {
   State<AutoTransitionBanner> createState() => _AutoTransitionBannerState();
 }
 
-class _AutoTransitionBannerState extends State<AutoTransitionBanner>
-    with TickerProviderStateMixin {
-  late AnimationController _transitionController;
-
+class _AutoTransitionBannerState extends State<AutoTransitionBanner> {
+  final CarouselSliderController _carouselController =
+      CarouselSliderController();
   int _currentBannerIndex = 0;
-  int _nextBannerIndex = 1;
-  Timer? _autoScrollTimer;
 
   MoviesModel moviesModel = MoviesModel();
   bool _isLoading = true;
 
-  // For swipe detection
-  double _dragStartX = 0;
-  double _dragUpdateX = 0;
-
   @override
   void initState() {
     super.initState();
-
-    _transitionController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
-    );
-
     fetchCategory();
   }
 
@@ -64,7 +50,6 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
         setState(() {
           _isLoading = false;
         });
-        _startAutoTransition();
       }
     } catch (e) {
       if (mounted) {
@@ -75,50 +60,8 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
     }
   }
 
-  void _startAutoTransition() {
-    _autoScrollTimer?.cancel();
-    _autoScrollTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (mounted && (moviesModel.data?.isNotEmpty ?? false)) {
-        _navigateToNext();
-      }
-    });
-  }
-
-  void _navigateToNext() {
-    setState(() {
-      _nextBannerIndex =
-          (_currentBannerIndex + 1) % (moviesModel.data?.length ?? 1);
-    });
-
-    _transitionController.forward(from: 0).then((_) {
-      if (mounted) {
-        setState(() {
-          _currentBannerIndex = _nextBannerIndex;
-        });
-      }
-    });
-  }
-
-  void _navigateToPrevious() {
-    setState(() {
-      _nextBannerIndex = (_currentBannerIndex - 1 < 0)
-          ? (moviesModel.data?.length ?? 1) - 1
-          : _currentBannerIndex - 1;
-    });
-
-    _transitionController.forward(from: 0).then((_) {
-      if (mounted) {
-        setState(() {
-          _currentBannerIndex = _nextBannerIndex;
-        });
-      }
-    });
-  }
-
   @override
   void dispose() {
-    _autoScrollTimer?.cancel();
-    _transitionController.dispose();
     super.dispose();
   }
 
@@ -127,7 +70,7 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     // Show shimmer while loading
-    if (_isLoading || moviesModel.data == null || moviesModel.data!.isEmpty) {
+    if (_isLoading) {
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Shimmer.fromColors(
@@ -145,235 +88,141 @@ class _AutoTransitionBannerState extends State<AutoTransitionBanner>
       );
     }
 
-    // Show actual banner with animation
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () {
-        if (moviesModel.data != null) {
-          UserService().canWatchMovie(
-            movie: moviesModel.data![_currentBannerIndex],
-          );
-        }
-      },
-      onHorizontalDragStart: (details) {
-        _dragStartX = details.globalPosition.dx;
-      },
-      onHorizontalDragUpdate: (details) {
-        _dragUpdateX = details.globalPosition.dx;
-      },
-      onHorizontalDragEnd: (details) {
-        double dragDistance = _dragUpdateX - _dragStartX;
-
-        // Minimum swipe distance to trigger navigation (50 pixels)
-        if (dragDistance.abs() > 50) {
-          // Reset auto-scroll timer after manual swipe
-          _startAutoTransition();
-
-          // Swipe left (next)
-          if (dragDistance < 0) {
-            _navigateToNext();
-          }
-          // Swipe right (previous)
-          else {
-            _navigateToPrevious();
-          }
-        }
-      },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        child: AnimatedBuilder(
-          animation: _transitionController,
-          builder: (context, child) {
-            final progress = _transitionController.value;
-            final currentMovie = moviesModel.data?[_currentBannerIndex];
-            final nextMovie = moviesModel.data?[_nextBannerIndex];
-            final easeProgress = Curves.easeInOutCubic.transform(progress);
-
-            return Stack(
-              children: [
-                // Background - Next image
-                Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 4),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(14),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withOpacity(0.15),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(14),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        Transform.scale(
-                          scale: 0.8 + (easeProgress * 0.2),
-                          child: CachedImage(
-                            imageUrl:
-                                nextMovie?.thumbUrl2 ??
-                                nextMovie?.thumbUrl ??
-                                '',
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        Container(
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
-                              colors: [
-                                Colors.transparent,
-                                Colors.black.withOpacity(0.8),
-                              ],
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 12,
-                          left: 14,
-                          right: 14,
-                          child: Opacity(
-                            opacity: easeProgress,
-                            child: Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    nextMovie?.movieName ?? '',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      shadows: [
-                                        Shadow(
-                                          color: Colors.black54,
-                                          blurRadius: 8,
-                                        ),
-                                      ],
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                Container(
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 0.5,
-                                    ),
-                                  ),
-                                  child: Image.asset(
-                                    "assets/images/play.png",
-                                    height: 30,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ],
+    // Show carousel slider with indicators
+    return Column(
+      children: [
+        // Carousel Slider
+        CarouselSlider.builder(
+          carouselController: _carouselController,
+          itemCount: moviesModel.data?.length ?? 0,
+          itemBuilder: (context, index, realIndex) {
+            final movie = moviesModel.data?[index];
+            return GestureDetector(
+              onTap: () {
+                if (movie != null) {
+                  UserService().canWatchMovie(movie: movie);
+                }
+              },
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(14),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withOpacity(0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 5),
                     ),
-                  ),
+                  ],
                 ),
-
-                // Foreground - Current image
-                Opacity(
-                  opacity: 1.0 - easeProgress,
-                  child: Transform.scale(
-                    scale: 1.0 + (easeProgress * 0.3),
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(14),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Theme.of(context).colorScheme.primary
-                                .withOpacity(0.3 * (1 - easeProgress)),
-                            blurRadius: 20,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(14),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      CachedImage(
+                        imageUrl: movie?.thumbUrl2 ?? movie?.thumbUrl ?? '',
+                        fit: BoxFit.fill,
                       ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(14),
-                        child: Stack(
-                          fit: StackFit.expand,
+                      Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.transparent,
+                              Colors.black.withOpacity(0.8),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 12,
+                        left: 14,
+                        right: 14,
+                        child: Row(
                           children: [
-                            CachedImage(
-                              imageUrl:
-                                  currentMovie?.thumbUrl2 ??
-                                  currentMovie?.thumbUrl ??
-                                  '',
-                              fit: BoxFit.cover,
+                            Expanded(
+                              child: Text(
+                                movie?.movieName ?? '',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  shadows: [
+                                    Shadow(
+                                      color: Colors.black54,
+                                      blurRadius: 8,
+                                    ),
+                                  ],
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                             Container(
                               decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  begin: Alignment.topCenter,
-                                  end: Alignment.bottomCenter,
-                                  colors: [
-                                    Colors.transparent,
-                                    Colors.black.withOpacity(0.8),
-                                  ],
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 0.5,
                                 ),
                               ),
-                            ),
-                            Positioned(
-                              bottom: 12,
-                              left: 14,
-                              right: 14,
-                              child: Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      currentMovie?.movieName ?? '',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        shadows: [
-                                          Shadow(
-                                            color: Colors.black54,
-                                            blurRadius: 8,
-                                          ),
-                                        ],
-                                      ),
-                                      maxLines: 2,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                  Container(
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      border: Border.all(
-                                        color: Colors.white,
-                                        width: 0.5,
-                                      ),
-                                    ),
-                                    child: Image.asset(
-                                      "assets/images/play.png",
-                                      height: 30,
-                                    ),
-                                  ),
-                                ],
+                              child: Image.asset(
+                                "assets/images/play.png",
+                                height: 30,
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ),
-              ],
+              ),
             );
           },
+          options: CarouselOptions(
+            height: 190,
+            autoPlay: true,
+            autoPlayInterval: const Duration(seconds: 5),
+            autoPlayAnimationDuration: const Duration(milliseconds: 1500),
+            autoPlayCurve: Curves.easeInOutCubic,
+            enlargeCenterPage: false,
+            viewportFraction: 1,
+
+            enableInfiniteScroll: true,
+            onPageChanged: (index, reason) {
+              setState(() {
+                _currentBannerIndex = index;
+              });
+            },
+          ),
         ),
-      ),
+
+        // Dot Indicators
+        const SizedBox(height: 10),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(moviesModel.data?.length ?? 0, (index) {
+            bool isActive = _currentBannerIndex == index;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              height: 3,
+              width: isActive ? 15 : 8,
+              decoration: BoxDecoration(
+                color: isActive
+                    ? AppColors.primary
+                    : (isDark ? Colors.grey[700] : Colors.grey[400]),
+                borderRadius: BorderRadius.circular(4),
+              ),
+            );
+          }),
+        ),
+      ],
     );
   }
 }

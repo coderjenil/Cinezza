@@ -1,4 +1,5 @@
 import 'package:cinezza/controllers/home_controller.dart';
+import 'package:cinezza/controllers/theme_controller.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -15,6 +16,7 @@ class AdultContentPage extends StatefulWidget {
 
 class _AdultContentPageState extends State<AdultContentPage> {
   final HomeController controller = Get.put(HomeController());
+  final ThemeController themeController = Get.put(ThemeController());
 
   // Computed values - calculated once per layout change
   late double screenWidth;
@@ -55,7 +57,7 @@ class _AdultContentPageState extends State<AdultContentPage> {
         ),
         child: SafeArea(
           child: Obx(() {
-            if (!controller.ageVerified.value) {
+            if (!themeController.ageVerified.value) {
               return _buildAgeVerification();
             }
 
@@ -217,7 +219,7 @@ class _AdultContentPageState extends State<AdultContentPage> {
             ),
             const SizedBox(height: 32),
             GestureDetector(
-              onTap: () => controller.verifyAge(true),
+              onTap: () => themeController.verifyAge(true),
               child: Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 48,
@@ -244,14 +246,6 @@ class _AdultContentPageState extends State<AdultContentPage> {
                     fontWeight: FontWeight.w600,
                   ),
                 ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextButton(
-              onPressed: () => Get.back(),
-              child: Text(
-                'Go Back',
-                style: Theme.of(context).textTheme.bodyMedium,
               ),
             ),
           ],

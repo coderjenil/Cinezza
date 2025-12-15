@@ -1,3 +1,4 @@
+import 'package:cinezza/core/constants/app_img.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -82,6 +83,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
               _buildMenuItem(
                 context,
+                img: AppImages.whatsapp,
                 icon: Icons.contact_support_rounded,
                 iconColor: const Color(0xFF10B981),
                 title: 'Contact Us',
@@ -95,6 +97,7 @@ class _ProfilePageState extends State<ProfilePage> {
               _buildMenuItem(
                 context,
                 icon: Icons.telegram_rounded,
+                img: AppImages.telegram,
                 iconColor: const Color(0xFF0088cc),
                 title: 'Join Our Community',
                 subtitle: 'Connect with us on Telegram',
@@ -112,6 +115,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
               _buildMenuItem(
                 context,
+                img: AppImages.instagram,
                 icon: Icons.camera_alt_rounded,
                 iconColor: const Color(0xFFE1306C),
                 title: 'Follow us on Instagram',
@@ -130,6 +134,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
               _buildMenuItem(
                 context,
+                img: AppImages.facebook,
                 icon: Icons.facebook_rounded,
                 iconColor: const Color(0xFF1877F2),
                 title: 'Follow us on Facebook',
@@ -501,6 +506,7 @@ class _ProfilePageState extends State<ProfilePage> {
     required Color iconColor,
     required String title,
     required String subtitle,
+    String img = "",
     required VoidCallback onTap,
     required bool isDark,
     bool showExternalIcon = false,
@@ -533,7 +539,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       color: iconColor.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    child: Icon(icon, color: iconColor, size: 20),
+                    child: img.isEmpty
+                        ? Icon(icon, color: iconColor, size: 20)
+                        : Image.asset(img, height: 20),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -608,8 +616,9 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  void _handleShareApp() =>
-      Share.share("Download Cinezza: Best movie streaming app!");
+  void _handleShareApp() => Share.share(
+    "I’m watching movies on Cinezza🍿\nJoin me and start streaming!\nDownload now:${splashController.remoteConfigModel.value?.config.webUrl}",
+  );
 
   void _showVersionDialog(BuildContext context) {}
 

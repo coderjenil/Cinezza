@@ -133,7 +133,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 // Auto-Transition Banner
                 SliverToBoxAdapter(
                   child: SizedBox(
-                    height: screenHeight * 0.22,
                     child: AutoTransitionBanner(
                       context: context,
                       controller: controller,

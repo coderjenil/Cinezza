@@ -17,7 +17,6 @@ class HomeController extends GetxController {
   final RxBool isLoading = true.obs;
   final RxString searchQuery = ''.obs;
 
-  final RxBool ageVerified = false.obs;
 
   Future<void> fetchAllCategories() async {
     try {
@@ -109,9 +108,7 @@ class HomeController extends GetxController {
     // Implement search logic here
   }
 
-  void verifyAge(bool verified) {
-    ageVerified.value = verified;
-  }
+ 
 
   void onMovieTapped(Map<String, dynamic> movie) {}
 }

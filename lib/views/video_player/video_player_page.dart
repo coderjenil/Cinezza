@@ -492,6 +492,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           child: Column(
             children: [
               _buildVideoPlayerSection(),
+
               Expanded(child: _buildDetailsSection(isDark)),
             ],
           ),
@@ -500,7 +501,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     );
   }
 
-  Widget _buildMovieInfo() {
+  Widget _buildMovieInfo(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -508,10 +509,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         children: [
           Text(
             widget.movie.movieName ?? 'Unknown Title',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: isDark ? Colors.white : Colors.black,
               letterSpacing: 0.5,
             ),
           ),
@@ -520,14 +521,14 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     );
   }
 
-  Widget _buildDescription() {
+  Widget _buildDescription(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Text(
         widget.movie.description ?? 'No description available',
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
-          color: Colors.white70,
+          color: isDark ? Colors.white70 : Colors.black,
           height: 1.5,
         ),
         maxLines: 4,
@@ -680,6 +681,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         ? SingleChildScrollView(
             child: Column(
               children: [
+                // SizedBox(height: 16),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(
@@ -707,8 +709,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         : Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _buildMovieInfo(),
-              _buildDescription(),
+              SizedBox(height: 10),
+              _buildMovieInfo(isDark),
+              _buildDescription(isDark),
 
               Padding(
                 padding: const EdgeInsets.symmetric(
@@ -722,10 +725,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                 padding: const EdgeInsets.only(left: 12),
                 child: Text(
                   'Related Movies',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: isDark ? Colors.white : Colors.black,
                   ),
                 ),
               ),

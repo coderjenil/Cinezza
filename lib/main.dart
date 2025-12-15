@@ -10,13 +10,14 @@ import 'controllers/splash_controller.dart';
 import 'controllers/theme_controller.dart';
 import 'core/routes/app_routes.dart';
 import 'core/theme/app_themes.dart';
+import 'services/app_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   // Initialize GetStorage
   await GetStorage.init();
-
+  AppService.checkAppStatus();
   // Initialize Google Mobile Ads
   MobileAds.instance.initialize();
 
