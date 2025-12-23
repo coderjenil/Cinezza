@@ -126,9 +126,7 @@ class _MovieCardState extends State<MovieCard>
                           fit: StackFit.expand,
                           children: [
                             CachedImage(
-                              imageUrl: widget.isLandScape
-                                  ? widget.movie.thumbUrl2 ?? ''
-                                  : widget.movie.thumbUrl ?? '',
+                              imageUrl: getMovieThumbUrl(),
                               fit: widget.isLandScape
                                   ? BoxFit.fill
                                   : BoxFit.cover,
@@ -149,6 +147,21 @@ class _MovieCardState extends State<MovieCard>
         ),
       ),
     );
+  }
+
+  String getMovieThumbUrl() {
+    final thumb1 = widget.movie.thumbUrl?.trim() ?? '';
+    final thumb2 = widget.movie.thumbUrl2?.trim() ?? '';
+
+    if (widget.isLandScape) {   
+      if (thumb2.isNotEmpty) return thumb2;
+      if (thumb1.isNotEmpty) return thumb1;
+    } else {
+      if (thumb1.isNotEmpty) return thumb1;
+      if (thumb2.isNotEmpty) return thumb2;
+    }
+
+    return '';
   }
 
   Widget _buildBottomGradient() {
