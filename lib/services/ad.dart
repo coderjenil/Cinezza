@@ -422,20 +422,20 @@ class AppOpenAdManager {
   void loadAd() {
     if (_isPremium()) return;
 
-    AppOpenAd.load(
-      adUnitId: AdService.appOpenId,
-      request: const AdRequest(),
-      adLoadCallback: AppOpenAdLoadCallback(
-        onAdLoaded: (ad) {
-          print('✅ App open ad loaded');
-          _appOpenLoadTime = DateTime.now();
-          _appOpenAd = ad;
-        },
-        onAdFailedToLoad: (error) {
-          print('❌ App open ad failed to load: $error');
-        },
-      ),
-    );
+    // AppOpenAd.load(
+    //   adUnitId: AdService.appOpenId,
+    //   request: const AdRequest(),
+    //   adLoadCallback: AppOpenAdLoadCallback(
+    //     onAdLoaded: (ad) {
+    //       print('✅ App open ad loaded');
+    //       _appOpenLoadTime = DateTime.now();
+    //       _appOpenAd = ad;
+    //     },
+    //     onAdFailedToLoad: (error) {
+    //       print('❌ App open ad failed to load: $error');
+    //     },
+    //   ),
+    // );
   }
 
   /// Track when app goes to background
