@@ -238,7 +238,7 @@ class AdService {
   }
 
   // ----------------------- App Open -----------------------
-  Future<void> showAppOpen() async {
+  static Future<void> showAppOpen() async {
     if (_isPremium()) return;
 
     await AppOpenAd.load(
@@ -246,15 +246,25 @@ class AdService {
       request: const AdRequest(),
       adLoadCallback: AppOpenAdLoadCallback(
         onAdLoaded: (ad) => ad.show(),
-        onAdFailedToLoad: (_) {},
+        onAdFailedToLoad: (e) {
+          debugPrint(e.toString());
+        },
       ),
     );
   }
 
   // ----------------------- Native -----------------------
-  Widget native() {
+  Widget native({
+    TemplateType type = TemplateType.small,
+    bool useCustomLayout = false,
+    double? height,
+  }) {
     if (_isPremium()) return const SizedBox.shrink();
-    return _NativeAdLoader();
+    return NativeAdLoader(
+      type: type,
+      useCustomLayout: useCustomLayout,
+      height: height,
+    );
   }
 
   // ----------------------- UI Loader -----------------------
@@ -268,7 +278,7 @@ class AdService {
   }
 
   // ----------------------- Premium Check -----------------------
-  bool _isPremium() {
+  static bool _isPremium() {
     final controller = Get.find<SplashController>();
     bool remote =
         controller.remoteConfigModel.value?.config.isAdsEnable ?? true;
@@ -281,12 +291,23 @@ class AdService {
 }
 
 // ------------------------- Native Loader Widget -------------------------
-class _NativeAdLoader extends StatefulWidget {
+class NativeAdLoader extends StatefulWidget {
+  final TemplateType type;
+  final bool useCustomLayout;
+  final double? height;
+
+  const NativeAdLoader({
+    super.key,
+    this.type = TemplateType.small,
+    this.useCustomLayout = false,
+    this.height,
+  });
+
   @override
-  State<_NativeAdLoader> createState() => _NativeAdLoaderState();
+  State<NativeAdLoader> createState() => _NativeAdLoaderState();
 }
 
-class _NativeAdLoaderState extends State<_NativeAdLoader> {
+class _NativeAdLoaderState extends State<NativeAdLoader> {
   NativeAd? _ad;
   bool loaded = false;
 
@@ -297,30 +318,190 @@ class _NativeAdLoaderState extends State<_NativeAdLoader> {
   }
 
   void _load() {
-    _ad = NativeAd(
-      adUnitId: AdService.nativeId,
-      request: const AdRequest(),
-      listener: NativeAdListener(
-        onAdLoaded: (_) => setState(() => loaded = true),
-        onAdFailedToLoad: (_, __) => setState(() => loaded = false),
-      ),
-      nativeTemplateStyle: NativeTemplateStyle(
-        templateType: TemplateType.small,
-      ),
-    );
+    if (widget.useCustomLayout) {
+      // Custom layout - prevents content cutting
+      _ad = NativeAd(
+        adUnitId: AdService.nativeId,
+        factoryId: 'customAdFactory',
+        request: const AdRequest(),
+        listener: NativeAdListener(
+          onAdLoaded: (_) {
+            print('✅ Custom native ad loaded successfully');
+            if (mounted) setState(() => loaded = true);
+          },
+          onAdFailedToLoad: (ad, error) {
+            print('❌ Custom native ad failed to load: $error');
+            ad.dispose();
+            if (mounted) setState(() => loaded = false);
+          },
+        ),
+      );
+    } else {
+      // Template layout
+      _ad = NativeAd(
+        adUnitId: AdService.nativeId,
+        request: const AdRequest(),
+        listener: NativeAdListener(
+          onAdLoaded: (_) {
+            print('✅ Template native ad loaded successfully');
+            if (mounted) setState(() => loaded = true);
+          },
+          onAdFailedToLoad: (ad, error) {
+            print('❌ Template native ad failed to load: $error');
+            ad.dispose();
+            if (mounted) setState(() => loaded = false);
+          },
+        ),
+        nativeTemplateStyle: NativeTemplateStyle(templateType: widget.type),
+      );
+    }
 
     _ad!.load();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (!loaded) return const SizedBox.shrink();
-    return SizedBox(height: 110, child: AdWidget(ad: _ad!));
+    if (!loaded || _ad == null) return const SizedBox.shrink();
+
+    // Use provided height or default based on layout type
+    final adHeight =
+        widget.height ??
+        (widget.useCustomLayout
+            ? 250.0
+            : (widget.type == TemplateType.medium ? 250.0 : 110.0));
+
+    return SizedBox(
+      height: adHeight,
+      width: double.infinity,
+      child: AdWidget(ad: _ad!),
+    );
   }
 
   @override
   void dispose() {
     _ad?.dispose();
     super.dispose();
+  }
+}
+
+class AppLifecycleHandler extends WidgetsBindingObserver {
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // AdService.showAppOpen();
+    }
+  }
+}
+
+class AppOpenAdManager {
+  AppOpenAd? _appOpenAd;
+  bool _isShowingAd = false;
+  DateTime? _appOpenLoadTime;
+
+  /// Maximum duration allowed between loading and showing the ad
+  final Duration maxCacheDuration = const Duration(hours: 4);
+
+  /// Minimum time app must be in background before showing ad again
+  final Duration minBackgroundDuration = const Duration(seconds: 30);
+  DateTime? _lastPauseTime;
+
+  static bool _isPremium() {
+    try {
+      final controller = Get.find<SplashController>();
+      bool remote =
+          controller.remoteConfigModel.value?.config.isAdsEnable ?? true;
+      if (!remote) return true;
+      if (controller.isPremium) return true;
+      return false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Load an app open ad
+  void loadAd() {
+    if (_isPremium()) return;
+
+    // AppOpenAd.load(
+    //   adUnitId: AdService.appOpenId,
+    //   request: const AdRequest(),
+    //   adLoadCallback: AppOpenAdLoadCallback(
+    //     onAdLoaded: (ad) {
+    //       print('✅ App open ad loaded');
+    //       _appOpenLoadTime = DateTime.now();
+    //       _appOpenAd = ad;
+    //     },
+    //     onAdFailedToLoad: (error) {
+    //       print('❌ App open ad failed to load: $error');
+    //     },
+    //   ),
+    // );
+  }
+
+  /// Track when app goes to background
+  void onAppBackgrounded() {
+    _lastPauseTime = DateTime.now();
+  }
+
+  /// Whether an ad is available and not expired
+  bool get isAdAvailable {
+    if (_appOpenAd == null) return false;
+    if (_appOpenLoadTime == null) return false;
+
+    final now = DateTime.now();
+    final duration = now.difference(_appOpenLoadTime!);
+    return duration < maxCacheDuration;
+  }
+
+  /// Show the ad if available
+  void showAdIfAvailable() {
+    if (_isPremium()) return;
+    if (_isShowingAd) {
+      print('⚠️ Ad already showing');
+      return;
+    }
+
+    // Check if app was in background long enough
+    if (_lastPauseTime != null) {
+      final backgroundDuration = DateTime.now().difference(_lastPauseTime!);
+      if (backgroundDuration < minBackgroundDuration) {
+        print('⚠️ App was not in background long enough');
+        return;
+      }
+    }
+
+    if (!isAdAvailable) {
+      print('⚠️ Ad not available or expired. Loading new ad...');
+      loadAd();
+      return;
+    }
+
+    _appOpenAd!.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (ad) {
+        _isShowingAd = true;
+        print('📺 App open ad showed');
+      },
+      onAdDismissedFullScreenContent: (ad) {
+        print('✅ App open ad dismissed');
+        _isShowingAd = false;
+        ad.dispose();
+        _appOpenAd = null;
+        loadAd(); // Preload next ad
+      },
+      onAdFailedToShowFullScreenContent: (ad, error) {
+        print('❌ Failed to show app open ad: $error');
+        _isShowingAd = false;
+        ad.dispose();
+        _appOpenAd = null;
+        loadAd();
+      },
+    );
+
+    _appOpenAd!.show();
+  }
+
+  void dispose() {
+    _appOpenAd?.dispose();
+    _appOpenAd = null;
   }
 }

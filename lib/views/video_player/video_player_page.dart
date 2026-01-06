@@ -1,4 +1,5 @@
 import 'dart:async';
+
 import 'package:cinezza/models/movies_model.dart';
 import 'package:cinezza/services/ad.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +10,7 @@ import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:video_player/video_player.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
+
 import '../../controllers/home_controller.dart';
 import '../../controllers/splash_controller.dart';
 import '../../controllers/video_player_controller.dart';
@@ -17,12 +19,12 @@ import '../../services/user_api_service.dart';
 import '../../services/volume_service.dart';
 import '../../services/watch_history_service.dart';
 import '../../widgets/movie_card.dart' show MovieCard;
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 
 enum VideoFit { fill, fit }
 
 class VideoPlayerPage extends StatefulWidget {
   final Movie movie;
+
   const VideoPlayerPage({super.key, required this.movie});
 
   @override
@@ -31,25 +33,35 @@ class VideoPlayerPage extends StatefulWidget {
 
 class _VideoPlayerPageState extends State<VideoPlayerPage> {
   final AppVideoController controller = Get.put(AppVideoController());
-  HomeController hController = Get.find();
+  HomeController hController = Get.find<HomeController>();
+
   Timer? _hideControlsTimer;
   Timer? _progressSaveTimer;
+
   bool _showControls = true;
   bool _isLocked = false;
   bool _isFullscreen = false;
+
   VideoFit _videoFit = VideoFit.fit;
+
   double _brightness = 0.5;
   double _volume = 0.5;
+
   bool _isDraggingBrightness = false;
   bool _isDraggingVolume = false;
   bool _isSwiping = false;
+
   Duration? _swipeSeekPosition;
+
   int _selectedSeasonIndex = 0;
   int _currentSeasonIndex = 0;
   int _currentEpisodeIndex = 0;
+
   String? _currentVideoUrl;
   Map<String, dynamic>? _watchHistory;
+
   bool _isInitializing = true;
+
   Rx<MoviesModel> moviesModel = MoviesModel().obs;
 
   // Advanced playback state
@@ -57,44 +69,19 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   int? _lastPositionSeconds;
   int? _lastDurationSeconds;
 
-  // Native Ad for pause overlay
-  NativeAd? _pauseNativeAd;
-  bool _isPauseAdLoaded = false;
-
   @override
   void initState() {
     super.initState();
+
     _initializeContent();
     _hideSystemVolumeUI();
-    _loadPauseNativeAd();
+
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
     ]);
-    WakelockPlus.enable();
-  }
 
-  void _loadPauseNativeAd() {
-    _pauseNativeAd = NativeAd(
-      adUnitId: AdService.nativeId,
-      request: const AdRequest(),
-      listener: NativeAdListener(
-        onAdLoaded: (_) {
-          if (mounted) {
-            setState(() => _isPauseAdLoaded = true);
-          }
-        },
-        onAdFailedToLoad: (_, __) {
-          if (mounted) {
-            setState(() => _isPauseAdLoaded = false);
-          }
-        },
-      ),
-      nativeTemplateStyle: NativeTemplateStyle(
-        templateType: TemplateType.medium,
-      ),
-    );
-    _pauseNativeAd!.load();
+    WakelockPlus.enable();
   }
 
   Future<void> _initializeContent() async {
@@ -102,6 +89,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       categoryId: widget.movie.categories?[0] ?? "",
       limit: 100,
     );
+
     debugPrint(moviesModel.value.toString());
     if (widget.movie.seasons != null && widget.movie.seasons!.isNotEmpty) {
       await _loadWatchHistoryAndPlay();
@@ -117,22 +105,26 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     _watchHistory = await WatchHistoryService.getWatchProgress(
       widget.movie.id ?? '',
     );
+
     if (_watchHistory != null) {
       _currentSeasonIndex = _watchHistory!['seasonIndex'] ?? 0;
       _currentEpisodeIndex = _watchHistory!['episodeIndex'] ?? 0;
       _selectedSeasonIndex = _currentSeasonIndex;
       _currentVideoUrl = _watchHistory!['videoUrl'];
+
       _lastPositionSeconds = _watchHistory!['positionSeconds'] as int?;
       _lastDurationSeconds = _watchHistory!['durationSeconds'] as int?;
     } else {
       _currentSeasonIndex = widget.movie.seasons!.length - 1;
       _currentEpisodeIndex = 0;
       _selectedSeasonIndex = _currentSeasonIndex;
+
       final latestSeason = widget.movie.seasons![_currentSeasonIndex];
       _currentVideoUrl = latestSeason.episodes![0].videoUrl;
     }
 
     await _initializePlayer();
+
     if (_watchHistory != null) {
       final lastPosition = Duration(
         seconds: _watchHistory!['positionSeconds'] ?? 0,
@@ -144,6 +136,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         }
       }
     }
+
     _startProgressTracking();
   }
 
@@ -165,9 +158,13 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     try {
       final splash = Get.find<SplashController>();
       final user = splash.userModel.value?.user;
+
       await UserService.increaseMovieView(movieId: widget.movie.uniqueId ?? "");
+
       if (user == null) return;
+
       final remaining = (user.trialCount);
+
       if (remaining > 0 && (user.planActive == false)) {
         debugPrint("🎟 Trial used. Remaining: ${remaining - 1}");
         await UserService.updateUserByDeviceId(
@@ -187,7 +184,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
     _progressSaveTimer = Timer.periodic(
       const Duration(seconds: 5),
-          (timer) => _saveWatchProgress(),
+      (timer) => _saveWatchProgress(),
     );
   }
 
@@ -199,10 +196,13 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     }
 
     if (!controller.isInitialized.value) return;
+
     final season = widget.movie.seasons![_currentSeasonIndex];
     final episode = season.episodes![_currentEpisodeIndex];
+
     final positionSeconds = controller.position.value.inSeconds;
     final durationSeconds = controller.duration.value.inSeconds;
+
     await WatchHistoryService.saveWatchProgress(
       movieId: widget.movie.id!,
       movieName: widget.movie.movieName ?? '',
@@ -214,8 +214,11 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       positionSeconds: positionSeconds,
       durationSeconds: durationSeconds,
     );
+
+    // Update local progress cache for UI
     _lastPositionSeconds = positionSeconds;
     _lastDurationSeconds = durationSeconds;
+
     _watchHistory ??= {};
     _watchHistory!.addAll({
       'seasonIndex': _currentSeasonIndex,
@@ -229,6 +232,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void _playEpisode(int seasonIndex, int episodeIndex) {
     final season = widget.movie.seasons![seasonIndex];
     final episode = season.episodes![episodeIndex];
+
     setState(() {
       _currentSeasonIndex = seasonIndex;
       _currentEpisodeIndex = episodeIndex;
@@ -238,17 +242,20 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       _lastPositionSeconds = 0;
       _lastDurationSeconds = 0;
     });
+
     _reinitializeVideo(episode.videoUrl ?? '');
   }
 
   void _playEpisodeFromBottomSheet(
-      BuildContext bottomSheetContext,
-      int seasonIndex,
-      int episodeIndex,
-      ) {
+    BuildContext bottomSheetContext,
+    int seasonIndex,
+    int episodeIndex,
+  ) {
     final season = widget.movie.seasons![seasonIndex];
     final episode = season.episodes![episodeIndex];
+
     Navigator.of(bottomSheetContext).pop();
+
     setState(() {
       _currentSeasonIndex = seasonIndex;
       _currentEpisodeIndex = episodeIndex;
@@ -258,6 +265,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       _lastPositionSeconds = 0;
       _lastDurationSeconds = 0;
     });
+
     Future.delayed(const Duration(milliseconds: 200), () {
       _reinitializeVideo(episode.videoUrl ?? '');
     });
@@ -265,6 +273,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
   Future<void> _reinitializeVideo(String videoUrl) async {
     setState(() => _isInitializing = true);
+
     if (controller.videoController != null) {
       controller.videoController!.pause();
       controller.videoController!.removeListener(controller.videoListener);
@@ -274,13 +283,17 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
     controller.isInitialized.value = false;
     controller.isPlaying.value = false;
+
     await controller.initializeVideo(customUrl: videoUrl);
     _attachVideoEndListener();
+
     setState(() => _isInitializing = false);
   }
 
   void _attachVideoEndListener() {
     if (controller.videoController == null) return;
+
+    // Ensure we don't add duplicate listeners
     controller.videoController!.removeListener(_videoEndListener);
     controller.videoController!.addListener(_videoEndListener);
   }
@@ -288,7 +301,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void _videoEndListener() {
     final vc = controller.videoController;
     if (vc == null || !vc.value.isInitialized) return;
+
     final value = vc.value;
+
+    // Detect end of playback (position >= duration)
     if (value.position >= value.duration &&
         !value.isPlaying &&
         value.duration > Duration.zero) {
@@ -299,23 +315,29 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void _handlePlaybackComplete() {
     if (_hasHandledCompletion) return;
     _hasHandledCompletion = true;
+
     if (widget.movie.seasons == null || widget.movie.seasons!.isEmpty) return;
+
     final seasons = widget.movie.seasons!;
     final currentSeason = seasons[_currentSeasonIndex];
     final episodeCount = currentSeason.episodes?.length ?? 0;
+
     final isLastEpisodeInSeason =
         _currentEpisodeIndex >= (episodeCount - 1).clamp(0, episodeCount);
 
     if (isLastEpisodeInSeason) {
       final isLastSeason = _currentSeasonIndex >= seasons.length - 1;
       if (isLastSeason) {
+        // No more episodes – just stop at the end
         return;
       } else {
+        // Move to first episode of next season
         final nextSeasonIndex = _currentSeasonIndex + 1;
         if ((seasons[nextSeasonIndex].episodes ?? []).isEmpty) return;
         _playEpisode(nextSeasonIndex, 0);
       }
     } else {
+      // Play next episode in same season
       _playEpisode(_currentSeasonIndex, _currentEpisodeIndex + 1);
     }
   }
@@ -334,6 +356,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
   void _toggleFullscreen() {
     setState(() => _isFullscreen = !_isFullscreen);
+
     if (_isFullscreen) {
       SystemChrome.setPreferredOrientations([
         DeviceOrientation.landscapeLeft,
@@ -374,6 +397,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
   void _getInitialVolume() async {
     if (mounted) {
       setState(() => _volume = 0.5);
+      // _applyVolume();
     }
   }
 
@@ -388,6 +412,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
 
   void _applyVolume() {
     FlutterVolumeController.setVolume(_volume);
+
     if (controller.videoController?.value.isInitialized ?? false) {
       controller.videoController!.setVolume(_volume);
     }
@@ -413,7 +438,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       _toggleFullscreen();
       return false;
     }
-
     return true;
   }
 
@@ -422,7 +446,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     _hideControlsTimer?.cancel();
     _progressSaveTimer?.cancel();
     _saveWatchProgress();
-    _pauseNativeAd?.dispose();
     FlutterVolumeController.showSystemUI = true;
     WakelockPlus.disable();
     SystemChrome.setPreferredOrientations([
@@ -432,6 +455,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       DeviceOrientation.landscapeRight,
     ]);
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
+
     if (controller.videoController != null) {
       controller.videoController!.removeListener(controller.videoListener);
       controller.videoController!.removeListener(_videoEndListener);
@@ -439,18 +463,21 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     }
 
     Get.delete<AppVideoController>();
+
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
     if (_isFullscreen) {
       return WillPopScope(
         onWillPop: _onWillPop,
         child: Scaffold(
           backgroundColor: Colors.black,
           body: _buildVideoPlayerSection(),
+          // fullscreen = only player UI
         ),
       );
     }
@@ -465,6 +492,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
           child: Column(
             children: [
               _buildVideoPlayerSection(),
+
               Expanded(child: _buildDetailsSection(isDark)),
             ],
           ),
@@ -473,7 +501,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     );
   }
 
-  Widget _buildMovieInfo() {
+  Widget _buildMovieInfo(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Column(
@@ -481,10 +509,10 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         children: [
           Text(
             widget.movie.movieName ?? 'Unknown Title',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: isDark ? Colors.white : Colors.black,
               letterSpacing: 0.5,
             ),
           ),
@@ -493,14 +521,14 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     );
   }
 
-  Widget _buildDescription() {
+  Widget _buildDescription(bool isDark) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Text(
         widget.movie.description ?? 'No description available',
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 14,
-          color: Colors.white70,
+          color: isDark ? Colors.white70 : Colors.black,
           height: 1.5,
         ),
         maxLines: 4,
@@ -508,10 +536,13 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     );
   }
 
+  // ---------------- VIDEO AREA ----------------
+
   Widget _buildVideoPlayerSection() {
     final height = _isFullscreen
         ? MediaQuery.of(context).size.height
         : MediaQuery.of(context).size.width * 9 / 13;
+
     return Container(
       height: height,
       width: double.infinity,
@@ -519,14 +550,13 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       child: _isInitializing
           ? Center(child: CircularProgressIndicator(color: AppColors.primary))
           : Obx(() {
-        if (!controller.isInitialized.value) {
-          return Center(
-            child: CircularProgressIndicator(color: AppColors.primary),
-          );
-        }
-
-        return ClipRect(child: _buildVideoPlayer());
-      }),
+              if (!controller.isInitialized.value) {
+                return Center(
+                  child: CircularProgressIndicator(color: AppColors.primary),
+                );
+              }
+              return ClipRect(child: _buildVideoPlayer());
+            }),
     );
   }
 
@@ -542,11 +572,11 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       onVerticalDragEnd: _isLocked
           ? null
           : (_) {
-        setState(() {
-          _isDraggingBrightness = false;
-          _isDraggingVolume = false;
-        });
-      },
+              setState(() {
+                _isDraggingBrightness = false;
+                _isDraggingVolume = false;
+              });
+            },
       onHorizontalDragStart: _isLocked
           ? null
           : (details) => _handleHorizontalDragStart(details),
@@ -557,26 +587,36 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       child: Container(
         color: Colors.black,
         child: Stack(
-          fit: StackFit.expand,
+          // fit: StackFit.expand,
           children: [
             _buildVideoWithFit(),
             if (_isDraggingBrightness) _buildBrightnessIndicator(),
             if (_isDraggingVolume) _buildVolumeIndicator(),
             if (_isSwiping) _buildSeekIndicator(),
+            controller.isPlaying.value || !_isFullscreen
+                ? const SizedBox()
+                : Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          height: 250,
+                          width: 300,
+                          child: AdService().native(
+                            type: TemplateType.medium,
+                            useCustomLayout: true,
+                            height: 250,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
 
-            // Native Ad Overlay when paused
-            Obx(() {
-              if (!controller.isPlaying.value &&
-                  _isPauseAdLoaded &&
-                  _pauseNativeAd != null &&
-                  !_isLocked) {
-                return _buildPauseNativeAdOverlay();
-              }
-              return const SizedBox.shrink();
-            }),
-
+            // Controls + lock button
             if (_showControls && !_isLocked) _buildControlsOverlay(),
             if (_showControls || _isLocked) _buildLockButton(),
+
             if (controller.isBuffering.value)
               Center(
                 child: Container(
@@ -601,29 +641,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     );
   }
 
-  // NEW: Native Ad Overlay when video is paused
-  Widget _buildPauseNativeAdOverlay() {
-    return Center(
-      child: Container(
-        width: 280,
-        height: 140,  // Changed from 280 to 140 (height/2)
-        margin: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: AppColors.primary.withOpacity(0.4),
-            width: 2,
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(14),
-          child: AdWidget(ad: _pauseNativeAd!),
-        ),
-      ),
-    );
-  }
-
   Widget _buildVideoWithFit() {
     if (!controller.videoController!.value.isInitialized) {
       return const SizedBox.shrink();
@@ -632,7 +649,9 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     final videoController = controller.videoController!;
     final videoSize = videoController.value.size;
     final videoAspectRatio = videoSize.width / videoSize.height;
+
     final videoWidget = VideoPlayer(videoController);
+
     switch (_videoFit) {
       case VideoFit.fill:
         return SizedBox.expand(
@@ -652,88 +671,96 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
     }
   }
 
+  // ---------------- DETAILS AREA ----------------
+
   Widget _buildDetailsSection(bool isDark) {
     final hasSeasons =
         widget.movie.seasons != null && widget.movie.seasons!.isNotEmpty;
+
     return hasSeasons
         ? SingleChildScrollView(
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 14,
-            ),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF16161A) : Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                if (!isDark)
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
-                    offset: const Offset(0, 6),
-                    blurRadius: 14,
+            child: Column(
+              children: [
+                // SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
                   ),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF16161A) : Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      if (!isDark)
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.04),
+                          offset: const Offset(0, 6),
+                          blurRadius: 14,
+                        ),
+                    ],
+                  ),
+                  child: _buildEpisodeSelector(isDark),
+                ),
+                SizedBox(height: 110, child: AdService().native()),
               ],
             ),
-            child: _buildEpisodeSelector(isDark),
-          ),
-          AdService().native(),
-        ],
-      ),
-    )
+          )
         : Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildMovieInfo(),
-        _buildDescription(),
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 12,
-            vertical: 20,
-          ),
-          child: AdService().native(),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(left: 12),
-          child: Text(
-            'Related Movies',
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        Obx(() {
-          return Expanded(
-            child: ListView.separated(
-              separatorBuilder: (context, index) => SizedBox(width: 10),
-              shrinkWrap: true,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 5,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              SizedBox(height: 10),
+              _buildMovieInfo(isDark),
+              _buildDescription(isDark),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 20,
+                ),
+                child: SizedBox(height: 110, child: AdService().native()),
               ),
-              scrollDirection: Axis.horizontal,
-              physics: const BouncingScrollPhysics(),
-              itemCount: moviesModel.value.data?.length ?? 0,
-              itemBuilder: (context, index) {
-                final movie = moviesModel.value.data![index];
-                return MovieCard(
-                  movie: movie,
-                  index: 0,
-                  isFromVideoPlayer: true,
-                  onTap: () {
-                    controller.togglePlayPause();
-                  },
+
+              Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Text(
+                  'Related Movies',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black,
+                  ),
+                ),
+              ),
+              Obx(() {
+                return Expanded(
+                  child: ListView.separated(
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(width: 10),
+                    shrinkWrap: true,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 5,
+                    ),
+                    scrollDirection: Axis.horizontal,
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: moviesModel.value.data?.length ?? 0,
+                    itemBuilder: (context, index) {
+                      final movie = moviesModel.value.data![index];
+                      return MovieCard(
+                        movie: movie,
+                        index: 0,
+                        isFromVideoPlayer: true,
+                        onTap: () {
+                          controller.togglePlayPause();
+                        },
+                      );
+                    },
+                  ),
                 );
-              },
-            ),
+              }),
+            ],
           );
-        }),
-      ],
-    );
   }
 
   Widget _buildEpisodeSelector(bool isDark) {
@@ -746,7 +773,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         // Premium Header with Gradient Accent
         Container(
           padding: const EdgeInsets.all(4),
-          // margin: const EdgeInsets.symmetric(horizontal: 16),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               colors: [
@@ -760,7 +786,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             children: [
               Container(
                 padding: const EdgeInsets.all(8),
-                margin: EdgeInsets.only(left: 10),
+                margin: const EdgeInsets.only(left: 10),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
@@ -800,7 +826,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         ),
         const SizedBox(height: 20),
 
-        // SIMPLE CLEAN SEASON TABBAR (Like Featured/Popular)
+        // SIMPLE CLEAN SEASON TABBAR
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 16),
           height: 40,
@@ -823,9 +849,8 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Season Text
                       Text(
-                        'Season ${season.seasonNo?.toString() ?? (index + 1).toString()}',
+                        'Season ${season.seasonNo?.toString() ?? (index + 1)}',
                         style: TextStyle(
                           color: isSelected
                               ? (isDark ? Colors.white : Colors.black)
@@ -837,8 +862,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                           letterSpacing: 0.2,
                         ),
                       ),
-
-                      // Bottom Indicator Line
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 250),
                         height: 3,
@@ -857,7 +880,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         ),
 
         const SizedBox(height: 20),
-
         // COMPACT HORIZONTAL EPISODE CAROUSEL
         SizedBox(
           height: 170,
@@ -939,7 +961,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 240, // Reduced from 280
+        width: 240,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(14),
           color: isCurrentEpisode
@@ -956,7 +978,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
             Expanded(
               child: Stack(
                 children: [
-                  // Thumbnail Image
                   ClipRRect(
                     borderRadius: BorderRadius.circular(10),
                     child: Container(
@@ -1001,7 +1022,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                             ),
                     ),
                   ),
-
                   // Gradient Overlay
                   Positioned.fill(
                     child: ClipRRect(
@@ -1385,7 +1405,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       ),
     );
   }
-
   // ---------------- CONTROLS OVER VIDEO ----------------
 
   Widget _buildControlsOverlay() {
@@ -1405,37 +1424,40 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       child: Column(
         children: [
           _buildTopControls(),
-          Expanded(
-            child: Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  _buildControlButton(
-                    Icons.replay_10_rounded,
-                    () => controller.seekRelative(-10),
-                    size: _isFullscreen ? 34 : 26,
-                  ),
-                  const SizedBox(width: 26),
-                  Obx(
-                    () => _buildControlButton(
-                      controller.isPlaying.value
-                          ? Icons.pause_rounded
-                          : Icons.play_arrow_rounded,
-                      controller.togglePlayPause,
-                      size: _isFullscreen ? 52 : 38,
-                      isPrimary: true,
+          controller.isPlaying.value || !_isFullscreen
+              ? Expanded(
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        _buildControlButton(
+                          Icons.replay_10_rounded,
+                          () => controller.seekRelative(-10),
+                          size: _isFullscreen ? 34 : 26,
+                        ),
+                        const SizedBox(width: 26),
+                        Obx(
+                          () => _buildControlButton(
+                            controller.isPlaying.value
+                                ? Icons.pause_rounded
+                                : Icons.play_arrow_rounded,
+                            controller.togglePlayPause,
+                            size: _isFullscreen ? 52 : 38,
+                            isPrimary: true,
+                          ),
+                        ),
+                        const SizedBox(width: 26),
+                        _buildControlButton(
+                          Icons.forward_10_rounded,
+                          () => controller.seekRelative(10),
+                          size: _isFullscreen ? 34 : 26,
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(width: 26),
-                  _buildControlButton(
-                    Icons.forward_10_rounded,
-                    () => controller.seekRelative(10),
-                    size: _isFullscreen ? 34 : 26,
-                  ),
-                ],
-              ),
-            ),
-          ),
+                )
+              : Spacer(),
+
           _buildBottomControls(),
         ],
       ),
@@ -1476,7 +1498,7 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               }
             },
           ),
-          const SizedBox(width: 4),
+          const SizedBox(width: 4, height: 10),
           Expanded(
             child: Text(
               widget.movie.movieName ?? 'Video Player',
@@ -1513,34 +1535,28 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
         final duration = controller.duration.value;
 
         return Column(
-          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
-                // LEFT PLAY/PAUSE BUTTON
-                IconButton(
-                  icon: Icon(
-                    controller.isPlaying.value
-                        ? Icons.pause_rounded
-                        : Icons.play_arrow_rounded,
-                    color: AppColors.primary,
-                    size: 20,
+                Text(
+                  _formatDuration(position),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
                   ),
-                  onPressed: controller.togglePlayPause,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
                 ),
                 const SizedBox(width: 8),
-
-                // SLIDER
                 Expanded(
                   child: SliderTheme(
                     data: SliderThemeData(
                       trackHeight: 3,
-                      thumbShape:
-                      const RoundSliderThumbShape(enabledThumbRadius: 7),
-                      overlayShape:
-                      const RoundSliderOverlayShape(overlayRadius: 14),
+                      thumbShape: const RoundSliderThumbShape(
+                        enabledThumbRadius: 7,
+                      ),
+                      overlayShape: const RoundSliderOverlayShape(
+                        overlayRadius: 14,
+                      ),
                       activeTrackColor: AppColors.primary,
                       inactiveTrackColor: Colors.white.withOpacity(0.3),
                       thumbColor: AppColors.primary,
@@ -1551,45 +1567,16 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                           .clamp(0, duration.inMilliseconds)
                           .toDouble(),
                       min: 0,
-                      max: duration.inMilliseconds
-                          .toDouble()
-                          .clamp(1, double.infinity),
+                      max: duration.inMilliseconds.toDouble().clamp(
+                        1,
+                        double.infinity,
+                      ),
                       onChanged: (value) {
                         controller.seekTo(
                           Duration(milliseconds: value.toInt()),
                         );
                       },
                     ),
-                  ),
-                ),
-
-                const SizedBox(width: 8),
-
-                // RIGHT PLAY/PAUSE BUTTON
-                IconButton(
-                  icon: Icon(
-                    controller.isPlaying.value
-                        ? Icons.pause_rounded
-                        : Icons.play_arrow_rounded,
-                    color: AppColors.primary,
-                    size: 20,
-                  ),
-                  onPressed: controller.togglePlayPause,
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  _formatDuration(position),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -1614,12 +1601,45 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
                 ),
               ],
             ),
+            controller.isPlaying.value || !_isFullscreen
+                ? SizedBox()
+                : Padding(
+                    padding: const EdgeInsets.only(bottom: 0),
+                    child: Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildControlButton(
+                            Icons.replay_10_rounded,
+                            () => controller.seekRelative(-10),
+                            size: _isFullscreen ? 20 : 26,
+                          ),
+                          const SizedBox(width: 26),
+                          Obx(
+                            () => _buildControlButton(
+                              controller.isPlaying.value
+                                  ? Icons.pause_rounded
+                                  : Icons.play_arrow_rounded,
+                              controller.togglePlayPause,
+                              size: _isFullscreen ? 25 : 38,
+                              isPrimary: true,
+                            ),
+                          ),
+                          const SizedBox(width: 26),
+                          _buildControlButton(
+                            Icons.forward_10_rounded,
+                            () => controller.seekRelative(10),
+                            size: _isFullscreen ? 20 : 26,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
           ],
         );
       }),
     );
   }
-
 
   Widget _buildControlButton(
     IconData icon,
@@ -1679,7 +1699,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       ),
     );
   }
-
   // ---------------- INDICATORS ----------------
 
   Widget _buildBrightnessIndicator() {
@@ -1806,7 +1825,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       ),
     );
   }
-
   // ---------------- GESTURE HANDLERS ----------------
 
   void _handleDoubleTap(TapDownDetails details) {
@@ -1875,7 +1893,6 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
       _swipeSeekPosition = null;
     });
   }
-
   // ---------------- UTILS ----------------
 
   String _formatDuration(Duration duration) {

@@ -133,7 +133,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 // Auto-Transition Banner
                 SliverToBoxAdapter(
                   child: SizedBox(
-                    height: screenHeight * 0.22,
                     child: AutoTransitionBanner(
                       context: context,
                       controller: controller,
@@ -156,7 +155,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   /// BUILD CATEGORIES WITH BANNER ADS EVERY 2 CATEGORIES
   Widget _buildCategoriesWithAds() {
     final categories = controller.nonAdultCategories
-        .where((cat) => cat.name != "Trending")
+        .where(
+          (cat) =>
+              cat.name != "Trending" &&
+              cat.name != "Web Movies" &&
+              cat.name != "Web Adult",
+        )
         .toList();
 
     return ListView.builder(
@@ -286,8 +290,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       floating: true,
       snap: true,
       elevation: 0,
-      backgroundColor: Colors.transparent,
-      toolbarHeight: 60,
+      backgroundColor: Colors.red,
+      toolbarHeight: 40,
       flexibleSpace: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -303,7 +307,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           ),
         ),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: Row(
             children: [
               Expanded(
@@ -332,8 +336,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 },
                 child: Lottie.asset(
                   "assets/jsons/icon_1.json",
-                  height: 45,
-                  width: 45,
+                  height: 60,
+                  width: 50,
                 ),
               ),
             ],

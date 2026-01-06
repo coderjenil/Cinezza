@@ -46,8 +46,9 @@ class SplashController extends GetxController {
       // Step 2: Fetch Remote Config
       loadingMessage.value = 'Checking server status...';
       progress.value = 0.2;
+
       await fetchConfig();
-      AdService().setDelay(3);
+      AdService().setDelay(remoteConfigModel.value?.config.adDelayCount ?? 3);
       update();
 
       // Step 3: Check Maintenance Mode

@@ -1,4 +1,5 @@
 import 'dart:math';
+import 'package:cinezza/controllers/splash_controller.dart';
 import 'package:cinezza/core/theme/app_colors.dart';
 import 'package:cinezza/services/user_api_service.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,7 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
   late AnimationController pulseController;
   late AnimationController shimmerController;
   late AnimationController scaleController;
+  SplashController splashController = Get.find<SplashController>();
 
   @override
   void initState() {
@@ -879,7 +881,9 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
               await PaymentService.instance.pay(
                 context: context,
                 plan: selectedPlan,
-                razorpayKey: "rzp_test_1DP5mmOlF5G5ag",
+                razorpayKey:
+                    splashController.remoteConfigModel.value?.config.rzpId ??
+                    "",
                 onPaymentSuccess: () async {
                   await UserService.updatePlan(planId: selectedPlan.planId);
                   Get.to(() => PremiumSuccessScreen(selectedPlan));
