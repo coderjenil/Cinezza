@@ -12,11 +12,13 @@ class HomeController extends GetxController {
   final RxList<CategoryModel> allCategories = <CategoryModel>[].obs;
   final RxList<CategoryModel> nonAdultCategories = <CategoryModel>[].obs;
   CategoryModel trendingCategory = CategoryModel();
+  MoviesModel moviesModel = MoviesModel();
 
   final RxInt currentCarouselIndex = 0.obs;
   final RxBool isLoading = true.obs;
   final RxString searchQuery = ''.obs;
 
+  RxBool isCategoryFetching = false.obs;
 
   Future<void> fetchAllCategories() async {
     try {
@@ -107,8 +109,6 @@ class HomeController extends GetxController {
     searchQuery.value = query;
     // Implement search logic here
   }
-
- 
 
   void onMovieTapped(Map<String, dynamic> movie) {}
 }

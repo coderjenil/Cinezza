@@ -39,7 +39,22 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
+
     fetchCategories();
+  }
+
+  fetchCategory() async {
+    try {
+      controller.isCategoryFetching.value = true;
+
+      controller.moviesModel = await controller.fetchMoviesByCategory(
+        categoryId: controller.trendingCategory.categoryId ?? '',
+      );
+    } catch (e) {
+      debugPrint(e.toString());
+    } finally {
+      controller.isCategoryFetching.value = false;
+    }
   }
 
   @override
@@ -59,6 +74,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       controller.isLoading.value = true;
 
       await controller.fetchAllCategories();
+      await fetchCategory();
       // Show dialog only if new user AND has credits
       if (splashController.isNewUser.value) {
         if (mounted) {
@@ -79,7 +95,9 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         showAlert(context: context, message: e);
       }
     } finally {
-      controller.isLoading.value = false;
+      Future.delayed(Duration(seconds: 1), () {
+        controller.isLoading.value = false;
+      });
     }
   }
 
@@ -110,13 +128,28 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                 slivers: [
                   _buildCompactAppBar(),
                   SliverToBoxAdapter(
-                    child: Shimmer.fromColors(
-                      baseColor: isDark ? Colors.grey[850]! : Colors.grey[300]!,
-                      highlightColor: isDark
-                          ? Colors.grey[700]!
-                          : Colors.grey[100]!,
-                      period: const Duration(milliseconds: 1500),
-                      child: SizedBox(height: screenHeight * 0.22),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 10,
+                      ),
+                      child: Shimmer.fromColors(
+                        baseColor: isDark
+                            ? Colors.grey[850]!
+                            : Colors.grey[300]!,
+                        highlightColor: isDark
+                            ? Colors.grey[700]!
+                            : Colors.grey[100]!,
+                        period: const Duration(milliseconds: 1500),
+                        child: Container(
+                          height: 200,
+                          decoration: BoxDecoration(
+                            color: Colors
+                                .white, // This is what creates the shimmer effect
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                   SliverToBoxAdapter(child: _buildShimmerLoading()),
@@ -180,10 +213,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
 
             // Add Banner Ad after every 2nd category
             if ((index + 1) % 2 == 0 && index < categories.length - 1)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 12),
-                child: BannerAdWidget(),
-              ),
+              BannerAdWidget(),
           ],
         );
       },

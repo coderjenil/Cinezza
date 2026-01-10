@@ -89,10 +89,7 @@ class _AdultContentPageState extends State<AdultContentPage> {
                         // Add Banner Ad after every 2nd category
                         if ((index + 1) % 2 == 0 &&
                             index < controller.adultCategories.length - 1)
-                          const Padding(
-                            padding: EdgeInsets.symmetric(vertical: 12),
-                            child: BannerAdWidget(),
-                          ),
+                          BannerAdWidget(),
                       ],
                     ),
                   ),

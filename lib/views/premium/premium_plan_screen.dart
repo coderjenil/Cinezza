@@ -25,12 +25,15 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
   late AnimationController pulseController;
   late AnimationController shimmerController;
   late AnimationController scaleController;
+  late AnimationController highlightController;
   SplashController splashController = Get.find<SplashController>();
+
+  final ScrollController _scrollController = ScrollController();
+  bool _hasScrolledToPopular = false;
 
   @override
   void initState() {
     super.initState();
-    fetchPlans();
 
     pulseController = AnimationController(
       vsync: this,
@@ -47,15 +50,104 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
       duration: const Duration(milliseconds: 200),
       value: 1.0,
     );
+
+    highlightController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 800),
+    );
+
+    // Set initial selected index to popular plan
+    _initializeSelectedPlan();
+
+    fetchPlans();
+  }
+
+  void _initializeSelectedPlan() {
+    if (controller.premiumPlans.isNotEmpty) {
+      final popularIndex = controller.premiumPlans.indexWhere(
+        (plan) => plan.isMostPopular,
+      );
+      if (popularIndex != -1) {
+        selectedIndex = popularIndex;
+      }
+    }
   }
 
   fetchPlans() async {
     try {
       if (controller.premiumPlans.isEmpty) {
-        controller.fetchPlans();
+        await controller.fetchPlans();
       }
+
+      // Set selected index after plans are loaded
+      _initializeSelectedPlan();
+
+      // Schedule scroll after widget is built
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!_hasScrolledToPopular && mounted) {
+          _scrollToPopularPlan();
+        }
+      });
     } catch (e) {
       showAlert(context: context, message: e);
+    }
+  }
+
+  void _scrollToPopularPlan() {
+    final plans = controller.premiumPlans;
+    if (plans.isEmpty || _hasScrolledToPopular) return;
+
+    final popularIndex = plans.indexWhere((plan) => plan.isMostPopular);
+
+    if (popularIndex != -1 && _scrollController.hasClients) {
+      _hasScrolledToPopular = true;
+
+      // Update selected index
+      setState(() {
+        selectedIndex = popularIndex;
+      });
+
+      // Calculate scroll position
+      final cardWidth = 142.0;
+      final screenWidth = MediaQuery.of(context).size.width;
+      final targetOffset =
+          (popularIndex * cardWidth) - (screenWidth / 2) + (cardWidth / 2);
+
+      // Add delay for smooth entry
+      Future.delayed(const Duration(milliseconds: 400), () {
+        if (_scrollController.hasClients && mounted) {
+          _scrollController
+              .animateTo(
+                targetOffset.clamp(
+                  0.0,
+                  _scrollController.position.maxScrollExtent,
+                ),
+                duration: const Duration(milliseconds: 700),
+                curve: Curves.easeOutCubic,
+              )
+              .then((_) {
+                // Trigger highlight animation after scroll completes
+                if (mounted) {
+                  Future.delayed(const Duration(milliseconds: 200), () {
+                    if (mounted) {
+                      highlightController.forward().then((_) {
+                        if (mounted) {
+                          highlightController.reverse().then((_) {
+                            // Repeat pulse 2 more times
+                            if (mounted) {
+                              highlightController.forward().then((_) {
+                                if (mounted) highlightController.reverse();
+                              });
+                            }
+                          });
+                        }
+                      });
+                    }
+                  });
+                }
+              });
+        }
+      });
     }
   }
 
@@ -64,6 +156,8 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
     pulseController.dispose();
     shimmerController.dispose();
     scaleController.dispose();
+    highlightController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -142,20 +236,6 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                   primaryColor,
                   textColor,
                 ),
-                // _buildBenefitItem(
-                //   Icons.download_for_offline_rounded,
-                //   "Download & Watch Offline",
-                //   "Perfect for flights & commutes",
-                //   primaryColor,
-                //   textColor,
-                // ),
-                // _buildBenefitItem(
-                //   Icons.devices_rounded,
-                //   "Multi-Device Access",
-                //   "TV, laptop, phone, tablet",
-                //   primaryColor,
-                //   textColor,
-                // ),
                 _buildBenefitItem(
                   Icons.block_rounded,
                   "Zero Ads Forever",
@@ -255,11 +335,11 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
             ? _dummyPlans()
             : controller.premiumPlans;
 
-        if (selectedIndex >= plans.length) {
+        if (plans.isNotEmpty && selectedIndex >= plans.length) {
           selectedIndex = 0;
         }
 
-        final selectedPlan = plans[selectedIndex];
+        final selectedPlan = plans.isNotEmpty ? plans[selectedIndex] : null;
 
         return SafeArea(
           child: Column(
@@ -383,14 +463,18 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                     ),
 
                     SizedBox(
-                      height: 190,
-                      child: Obx(() {
-                        return controller.premiumPlans.isEmpty
-                            ? CircularProgressIndicator()
-                            : ListView.builder(
+                      height: 200,
+                      child: controller.premiumPlans.isEmpty
+                          ? const Center(child: CircularProgressIndicator())
+                          : ClipRect(
+                              child: ListView.builder(
+                                controller: _scrollController,
                                 scrollDirection: Axis.horizontal,
                                 itemCount: plans.length,
                                 physics: const BouncingScrollPhysics(),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                ),
                                 itemBuilder: (context, index) {
                                   return _buildCompactPlanCard(
                                     plans[index],
@@ -402,8 +486,8 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                                     textColor,
                                   );
                                 },
-                              );
-                      }),
+                              ),
+                            ),
                     ),
 
                     Container(
@@ -539,13 +623,14 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                 ),
               ),
 
-              _buildBottomCTA(
-                selectedPlan,
-                primaryColor,
-                bgColor,
-                textColor,
-                isDark,
-              ),
+              if (selectedPlan != null)
+                _buildBottomCTA(
+                  selectedPlan,
+                  primaryColor,
+                  bgColor,
+                  textColor,
+                  isDark,
+                ),
             ],
           ),
         );
@@ -650,188 +735,218 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
     Color cardBg,
     Color textColor,
   ) {
-    final hasDiscount = plan.discountPercent > 0;
     final perDayCost = (plan.finalPrice / plan.durationInDays).toStringAsFixed(
       1,
     );
 
     return GestureDetector(
       onTap: () => setState(() => selectedIndex = index),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOutCubic,
-        width: 130,
-        margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: cardBg,
-          border: Border.all(
-            color: isSelected ? primaryColor : primaryColor.withOpacity(0.2),
-            width: isSelected ? 2.5 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
-              blurRadius: isSelected ? 20 : 8,
-              spreadRadius: isSelected ? 2 : 0,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            if (plan.discountPercent > 0)
-              Positioned(
-                right: -8,
-                top: -8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.green,
-                    borderRadius: BorderRadius.circular(6),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.green.withOpacity(0.4),
-                        blurRadius: 6,
-                      ),
-                    ],
-                  ),
-                  child: Text(
-                    "SAVE ${plan.discountPercent}%",
-                    style: const TextStyle(
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
+      child: AnimatedBuilder(
+        animation: highlightController,
+        builder: (context, child) {
+          final shouldPulse =
+              plan.isMostPopular &&
+              isSelected &&
+              highlightController.isAnimating;
+          final scale = shouldPulse
+              ? 1.0 + (highlightController.value * 0.05)
+              : 1.0;
+
+          return Transform.scale(
+            scale: scale,
+            alignment: Alignment.center,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
+              width: 130,
+              margin: EdgeInsets.symmetric(
+                horizontal: 6,
+                vertical: shouldPulse ? 8 : 4,
               ),
-
-            if (plan.isMostPopular)
-              Positioned(
-                right: -8,
-                top: -8,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 6,
-                    vertical: 3,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(16),
+                color: cardBg,
+                border: Border.all(
+                  color: isSelected
+                      ? primaryColor
+                      : primaryColor.withOpacity(0.2),
+                  width: isSelected ? 2.5 : 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(isDark ? 0.2 : 0.05),
+                    blurRadius: isSelected ? 20 : 8,
+                    spreadRadius: isSelected ? 2 : 0,
+                    offset: const Offset(0, 4),
                   ),
-                  decoration: BoxDecoration(
-                    gradient: AppColors.oceanGradient,
-                    borderRadius: BorderRadius.circular(6),
-                    boxShadow: [
-                      BoxShadow(
-                        color: primaryColor.withOpacity(0.4),
-                        blurRadius: 6,
+                  if (shouldPulse)
+                    BoxShadow(
+                      color: primaryColor.withOpacity(
+                        highlightController.value * 0.5,
                       ),
-                    ],
-                  ),
-                  child: const Text(
-                    "POPULAR",
-                    style: TextStyle(
-                      fontSize: 7,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
+                      blurRadius: 25 + (highlightController.value * 15),
+                      spreadRadius: highlightController.value * 4,
                     ),
-                  ),
-                ),
+                ],
               ),
-
-            Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const SizedBox(height: 4),
-
-                Text(
-                  plan.title,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w800,
-                    color: isSelected ? Colors.amber : textColor,
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        children: [
-                          if (plan.discountPercent > 0)
-                            Text(
-                              "₹${plan.originalPrice}",
-                              style: TextStyle(
-                                decoration: TextDecoration.lineThrough,
-                                fontSize: 16,
-                                color: textColor.withOpacity(0.5),
-                              ),
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  if (plan.discountPercent > 0 && !plan.isMostPopular)
+                    Positioned(
+                      right: -8,
+                      top: -8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          borderRadius: BorderRadius.circular(6),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.green.withOpacity(0.4),
+                              blurRadius: 6,
                             ),
-                          if (plan.discountPercent > 0)
-                            const SizedBox(width: 6),
-                          Text(
-                            "₹${plan.finalPrice.toStringAsFixed(0)}",
-                            style: TextStyle(
-                              fontSize: 30,
-                              fontWeight: FontWeight.w900,
-                              color: isSelected ? Colors.amber : textColor,
+                          ],
+                        ),
+                        child: Text(
+                          "SAVE ${plan.discountPercent}%",
+                          style: const TextStyle(
+                            fontSize: 7,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  if (plan.isMostPopular)
+                    Positioned(
+                      right: -8,
+                      top: -8,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: AppColors.oceanGradient,
+                          borderRadius: BorderRadius.circular(6),
+                          boxShadow: [
+                            BoxShadow(
+                              color: primaryColor.withOpacity(0.4),
+                              blurRadius: 6,
+                            ),
+                          ],
+                        ),
+                        child: const Text(
+                          "POPULAR",
+                          style: TextStyle(
+                            fontSize: 7,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const SizedBox(height: 4),
+
+                      Text(
+                        plan.title,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: isSelected ? Colors.amber : textColor,
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Column(
+                              children: [
+                                if (plan.discountPercent > 0)
+                                  Text(
+                                    "₹${plan.originalPrice}",
+                                    style: TextStyle(
+                                      decoration: TextDecoration.lineThrough,
+                                      fontSize: 16,
+                                      color: textColor.withOpacity(0.5),
+                                    ),
+                                  ),
+                                if (plan.discountPercent > 0)
+                                  const SizedBox(height: 2),
+                                Text(
+                                  "₹${plan.finalPrice.toStringAsFixed(0)}",
+                                  style: TextStyle(
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.w900,
+                                    color: isSelected
+                                        ? Colors.amber
+                                        : textColor,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
 
-                const SizedBox(height: 4),
+                      const SizedBox(height: 4),
 
-                Text(
-                  _durationText(plan.durationInDays),
-                  style: TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    color: isSelected
-                        ? Colors.amber
-                        : textColor.withOpacity(0.6),
+                      Text(
+                        _durationText(plan.durationInDays),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: isSelected
+                              ? Colors.amber
+                              : textColor.withOpacity(0.6),
+                        ),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? primaryColor.withOpacity(0.15)
+                              : primaryColor.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          "₹$perDayCost/day",
+                          style: TextStyle(
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700,
+                            color: isSelected
+                                ? Colors.amber
+                                : textColor.withOpacity(0.7),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                   ),
-                ),
-
-                const SizedBox(height: 6),
-
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? primaryColor.withOpacity(0.15)
-                        : primaryColor.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(
-                    "₹$perDayCost/day",
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: isSelected
-                          ? Colors.amber
-                          : textColor.withOpacity(0.7),
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 8),
-              ],
+                ],
+              ),
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -864,7 +979,7 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
           if (selectedPlan.discountPercent > 0)
             Text(
               "🎉 You save ${selectedPlan.discountPercent}%!",
-              style: TextStyle(
+              style: const TextStyle(
                 color: Colors.green,
                 fontWeight: FontWeight.bold,
                 fontSize: 13,
@@ -984,16 +1099,6 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
     final animValue = shimmerController.value;
     final offset = sin(animValue * pi * 2) * 0.3;
     return (base + offset).clamp(0.0, 1.0);
-  }
-
-  int _calculateSavings(PlanModel plan) {
-    if (plan.durationInDays == 7) return 0;
-    final weeklyPrice = 39.0;
-    final weekEquivalent = (plan.durationInDays / 7).ceil();
-    final regularPrice = weeklyPrice * weekEquivalent;
-    final savings = ((regularPrice - plan.finalPrice) / regularPrice * 100)
-        .round();
-    return savings > 0 ? savings : 0;
   }
 
   List<PlanModel> _dummyPlans() {

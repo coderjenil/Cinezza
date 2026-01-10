@@ -1,9 +1,11 @@
 import 'package:cinezza/controllers/premium_controller.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 import 'controllers/home_controller.dart';
 import 'controllers/splash_controller.dart';
@@ -12,16 +14,23 @@ import 'core/routes/app_routes.dart';
 import 'core/theme/app_themes.dart';
 import 'services/ad.dart';
 import 'services/app_service.dart';
-
 // NEW
 import 'services/connectivity_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
+  await Firebase.initializeApp();
   await GetStorage.init();
   AppService.checkAppStatus();
   MobileAds.instance.initialize();
+
+  // Enable verbose logging for debugging (remove in production)
+  OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
+  // Initialize with your OneSignal App ID
+  OneSignal.initialize("d31ee5e8-a1c2-48c6-a516-f69c62129f19");
+  // Use this method to prompt for push notifications.
+  // We recommend removing this method after testing and instead use In-App Messages to prompt for notification permission.
+  OneSignal.Notifications.requestPermission(false);
 
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -56,6 +65,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  
   final AppOpenAdManager _appOpenAdManager = AppOpenAdManager();
 
   @override

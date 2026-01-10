@@ -124,8 +124,8 @@ class _BannerAdWidgetState extends State<BannerAdWidget>
     return CommonShimmer(
       colorOpacity: 0.3,
       child: Container(
-        height: 60,
-        margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        height: 50,
+        margin: const EdgeInsets.symmetric(horizontal: 20).copyWith(top: 10),
         decoration: BoxDecoration(
           color: Colors.grey.shade300,
           borderRadius: BorderRadius.circular(12),
