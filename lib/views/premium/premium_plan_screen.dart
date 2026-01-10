@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 
 import '../../controllers/premium_controller.dart';
 import '../../models/premium_plan_model.dart';
+import '../../services/app_service.dart';
 import '../../services/payment_service.dart';
 import '../../utils/dialogs/show_aleart.dart';
 import 'premium_success_screen.dart';
