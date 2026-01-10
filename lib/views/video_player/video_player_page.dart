@@ -706,60 +706,63 @@ class _VideoPlayerPageState extends State<VideoPlayerPage> {
               ],
             ),
           )
-        : Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 10),
-              _buildMovieInfo(isDark),
-              _buildDescription(isDark),
+        : SizedBox(
+            width: double.infinity,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 10),
+                _buildMovieInfo(isDark),
+                _buildDescription(isDark),
 
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 20,
-                ),
-                child: SizedBox(height: 110, child: AdService().native()),
-              ),
-
-              Padding(
-                padding: const EdgeInsets.only(left: 12),
-                child: Text(
-                  'Related Movies',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black,
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 20,
                   ),
+                  child: SizedBox(height: 110, child: AdService().native()),
                 ),
-              ),
-              Obx(() {
-                return Expanded(
-                  child: ListView.separated(
-                    separatorBuilder: (context, index) =>
-                        const SizedBox(width: 10),
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 5,
+
+                Padding(
+                  padding: const EdgeInsets.only(left: 12),
+                  child: Text(
+                    'Related Movies',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: isDark ? Colors.white : Colors.black,
                     ),
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: moviesModel.value.data?.length ?? 0,
-                    itemBuilder: (context, index) {
-                      final movie = moviesModel.value.data![index];
-                      return MovieCard(
-                        movie: movie,
-                        index: 0,
-                        isFromVideoPlayer: true,
-                        onTap: () {
-                          controller.togglePlayPause();
-                        },
-                      );
-                    },
                   ),
-                );
-              }),
-            ],
+                ),
+                Obx(() {
+                  return Expanded(
+                    child: ListView.separated(
+                      separatorBuilder: (context, index) =>
+                          const SizedBox(width: 10),
+                      shrinkWrap: true,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 5,
+                      ),
+                      scrollDirection: Axis.horizontal,
+                      physics: const BouncingScrollPhysics(),
+                      itemCount: moviesModel.value.data?.length ?? 0,
+                      itemBuilder: (context, index) {
+                        final movie = moviesModel.value.data![index];
+                        return MovieCard(
+                          movie: movie,
+                          index: 0,
+                          isFromVideoPlayer: true,
+                          onTap: () {
+                            controller.togglePlayPause();
+                          },
+                        );
+                      },
+                    ),
+                  );
+                }),
+              ],
+            ),
           );
   }
 

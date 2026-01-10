@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../controllers/splash_controller.dart';
@@ -14,7 +15,35 @@ class AdService {
   int _adCounter = 0;
   int _delayCount = 1;
 
-  // ----------------------- Dynamic IDs -----------------------
+  // Track if interstitial ad is currently showing
+  bool _isInterstitialAdShowing = false;
+
+  // ----------------------- TEST AD TOGGLE -----------------------
+  // Set to true for test ads, false for production ads
+  static const bool testAd = true;
+
+  // ----------------------- Test Ad IDs (Google provided) -----------------------
+  static String get _testInterstitialAdId => Platform.isAndroid
+      ? "ca-app-pub-3940256099942544/1033173712"
+      : "ca-app-pub-3940256099942544/4411468910";
+
+  static String get _testRewardedAdId => Platform.isAndroid
+      ? "ca-app-pub-3940256099942544/5224354917"
+      : "ca-app-pub-3940256099942544/1712485313";
+
+  static String get _testAppOpenId => Platform.isAndroid
+      ? "ca-app-pub-3940256099942544/9257395921"
+      : "ca-app-pub-3940256099942544/5575463023";
+
+  static String get _testBannerAdId => Platform.isAndroid
+      ? "ca-app-pub-3940256099942544/6300978111"
+      : "ca-app-pub-3940256099942544/2934735716";
+
+  static String get _testNativeId => Platform.isAndroid
+      ? "ca-app-pub-3940256099942544/2247696110"
+      : "ca-app-pub-3940256099942544/3986624511";
+
+  // ----------------------- Dynamic IDs (Production from Remote Config) -----------------------
   static String _getRemoteId(String type) {
     try {
       final controller = Get.find<SplashController>();
@@ -41,44 +70,42 @@ class AdService {
     }
   }
 
-  // ----------------------- Test fallback + final getters -----------------------
+  // ----------------------- Final Ad ID Getters (Test/Production Switch) -----------------------
 
-  static String get interstitialAdId => _getRemoteId("interstitial").isNotEmpty
-      ? _getRemoteId("interstitial")
-      : (Platform.isAndroid
-            ? "ca-app-pub-3940256099942544/1033173712"
-            : "ca-app-pub-3940256099942544/4411468910");
+  static String get interstitialAdId {
+    if (testAd) return _testInterstitialAdId;
+    return _getRemoteId("interstitial").isNotEmpty
+        ? _getRemoteId("interstitial")
+        : _testInterstitialAdId;
+  }
 
-  static String get rewardedAdId => _getRemoteId("rewarded").isNotEmpty
-      ? _getRemoteId("rewarded")
-      : (Platform.isAndroid
-            ? "ca-app-pub-3940256099942544/5224354917"
-            : "ca-app-pub-3940256099942544/1712485313");
+  static String get rewardedAdId {
+    if (testAd) return _testRewardedAdId;
+    return _getRemoteId("rewarded").isNotEmpty
+        ? _getRemoteId("rewarded")
+        : _testRewardedAdId;
+  }
 
-  static String get rewardedInterstitialId =>
-      _getRemoteId("rewarded_interstitial").isNotEmpty
-      ? _getRemoteId("rewarded_interstitial")
-      : (Platform.isAndroid
-            ? "ca-app-pub-3940256099942544/5354046379"
-            : "ca-app-pub-3940256099942544/6978759866");
+  static String get appOpenId {
+    if (testAd) return _testAppOpenId;
+    return _getRemoteId("app_open").isNotEmpty
+        ? _getRemoteId("app_open")
+        : _testAppOpenId;
+  }
 
-  static String get appOpenId => _getRemoteId("app_open").isNotEmpty
-      ? _getRemoteId("app_open")
-      : (Platform.isAndroid
-            ? "ca-app-pub-3940256099942544/9257395921"
-            : "ca-app-pub-3940256099942544/5575463023");
+  static String get bannerAdId {
+    if (testAd) return _testBannerAdId;
+    return _getRemoteId("banner").isNotEmpty
+        ? _getRemoteId("banner")
+        : _testBannerAdId;
+  }
 
-  static String get bannerAdId => _getRemoteId("banner").isNotEmpty
-      ? _getRemoteId("banner")
-      : (Platform.isAndroid
-            ? "ca-app-pub-3940256099942544/6300978111"
-            : "ca-app-pub-3940256099942544/2934735716");
-
-  static String get nativeId => _getRemoteId("native").isNotEmpty
-      ? _getRemoteId("native")
-      : (Platform.isAndroid
-            ? "ca-app-pub-3940256099942544/2247696110"
-            : "ca-app-pub-3940256099942544/3986624511");
+  static String get nativeId {
+    if (testAd) return _testNativeId;
+    return _getRemoteId("native").isNotEmpty
+        ? _getRemoteId("native")
+        : _testNativeId;
+  }
 
   // ----------------------- Banner -----------------------
   Widget banner({bool forceShow = false}) {
@@ -114,21 +141,36 @@ class AdService {
     }
   }
 
-  // ----------------------- Interstitial -----------------------
+  // ----------------------- Interstitial with Back Button Prevention -----------------------
   Future<void> _showInterstitial(
     BuildContext context,
     VoidCallback onComplete, {
     Duration timeout = const Duration(seconds: 5),
   }) async {
-    _showLoader(context);
-
     bool dismissed = false;
+    bool loaderDismissed = false;
 
+    // Show loader with back button prevention
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => PopScope(
+        canPop: false,
+        child: const Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      ),
+    );
+
+    // Timeout for loading
     Timer(timeout, () {
-      if (!dismissed) {
+      if (!loaderDismissed && !_isInterstitialAdShowing) {
         Navigator.pop(context);
-        dismissed = true;
-        onComplete();
+        loaderDismissed = true;
+        if (!dismissed) {
+          dismissed = true;
+          onComplete();
+        }
       }
     });
 
@@ -137,8 +179,11 @@ class AdService {
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdFailedToLoad: (_) {
-          if (!dismissed) {
+          if (!loaderDismissed) {
             Navigator.pop(context);
+            loaderDismissed = true;
+          }
+          if (!dismissed) {
             dismissed = true;
             onComplete();
           }
@@ -149,12 +194,35 @@ class AdService {
             return;
           }
 
-          Navigator.pop(context);
-          dismissed = true;
+          // Close loader
+          if (!loaderDismissed) {
+            Navigator.pop(context);
+            loaderDismissed = true;
+          }
 
           ad.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (_) => onComplete(),
-            onAdFailedToShowFullScreenContent: (_, __) => onComplete(),
+            onAdShowedFullScreenContent: (_) {
+              _isInterstitialAdShowing = true;
+              print('📺 Interstitial ad is now showing');
+            },
+            onAdDismissedFullScreenContent: (_) {
+              _isInterstitialAdShowing = false;
+              ad.dispose();
+              if (!dismissed) {
+                dismissed = true;
+                onComplete();
+              }
+              print('✅ Interstitial ad dismissed properly');
+            },
+            onAdFailedToShowFullScreenContent: (_, error) {
+              _isInterstitialAdShowing = false;
+              ad.dispose();
+              if (!dismissed) {
+                dismissed = true;
+                onComplete();
+              }
+              print('❌ Interstitial ad failed to show: $error');
+            },
           );
 
           ad.show();
@@ -188,8 +256,14 @@ class AdService {
           Navigator.pop(context);
 
           ad.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (_) => onComplete?.call(),
-            onAdFailedToShowFullScreenContent: (_, __) => onComplete?.call(),
+            onAdDismissedFullScreenContent: (_) {
+              ad.dispose();
+              onComplete?.call();
+            },
+            onAdFailedToShowFullScreenContent: (_, __) {
+              ad.dispose();
+              onComplete?.call();
+            },
           );
 
           ad.show(
@@ -200,42 +274,7 @@ class AdService {
     );
   }
 
-  // ----------------------- Rewarded Interstitial -----------------------
-  Future<void> showRewardedInterstitial(
-    BuildContext context, {
-    required Function(AdWithoutView, RewardItem) onReward,
-    VoidCallback? onComplete,
-  }) async {
-    if (_isPremium()) {
-      onComplete?.call();
-      return;
-    }
 
-    _showLoader(context);
-
-    RewardedInterstitialAd.load(
-      adUnitId: rewardedInterstitialId,
-      request: const AdRequest(),
-      rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
-        onAdFailedToLoad: (_) {
-          Navigator.pop(context);
-          onComplete?.call();
-        },
-        onAdLoaded: (ad) {
-          Navigator.pop(context);
-
-          ad.fullScreenContentCallback = FullScreenContentCallback(
-            onAdDismissedFullScreenContent: (_) => onComplete?.call(),
-            onAdFailedToShowFullScreenContent: (_, __) => onComplete?.call(),
-          );
-
-          ad.show(
-            onUserEarnedReward: (adView, reward) => onReward(adView, reward),
-          );
-        },
-      ),
-    );
-  }
 
   // ----------------------- App Open -----------------------
   static Future<void> showAppOpen() async {
@@ -279,18 +318,103 @@ class AdService {
 
   // ----------------------- Premium Check -----------------------
   static bool _isPremium() {
-    final controller = Get.find<SplashController>();
-    bool remote =
-        controller.remoteConfigModel.value?.config.isAdsEnable ?? true;
+    try {
+      final controller = Get.find<SplashController>();
+      bool remote =
+          controller.remoteConfigModel.value?.config.isAdsEnable ?? true;
 
-    if (!remote) return true;
-    if (controller.isPremium) return true;
+      if (!remote) return true;
+      if (controller.isPremium) return true;
 
-    return false;
+      return false;
+    } catch (_) {
+      return false;
+    }
   }
 }
 
-// ------------------------- Native Loader Widget -------------------------
+// ------------------------- Shimmer Widget -------------------------
+class ShimmerWidget extends StatefulWidget {
+  final Widget child;
+  final Color baseColor;
+  final Color highlightColor;
+
+  const ShimmerWidget({
+    super.key,
+    required this.child,
+    this.baseColor = const Color(0x1AFFFFFF),
+    this.highlightColor = const Color(0x33FFFFFF),
+  });
+
+  @override
+  State<ShimmerWidget> createState() => _ShimmerWidgetState();
+}
+
+class _ShimmerWidgetState extends State<ShimmerWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+
+    _animation = Tween<double>(begin: -2, end: 2).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animation,
+      builder: (context, child) {
+        return ShaderMask(
+          blendMode: BlendMode.srcATop,
+          shaderCallback: (bounds) {
+            return LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                widget.baseColor,
+                widget.highlightColor,
+                widget.baseColor,
+              ],
+              stops: [0.0, 0.5, 1.0],
+              transform: _SlidingGradientTransform(
+                slidePercent: _animation.value,
+              ),
+            ).createShader(bounds);
+          },
+          child: widget.child,
+        );
+      },
+    );
+  }
+}
+
+class _SlidingGradientTransform extends GradientTransform {
+  final double slidePercent;
+
+  const _SlidingGradientTransform({required this.slidePercent});
+
+  @override
+  Matrix4 transform(Rect bounds, {TextDirection? textDirection}) {
+    return Matrix4.translationValues(bounds.width * slidePercent, 0.0, 0.0);
+  }
+}
+
+// ------------------------- Native Loader Widget with Shimmer -------------------------
 class NativeAdLoader extends StatefulWidget {
   final TemplateType type;
   final bool useCustomLayout;
@@ -319,7 +443,6 @@ class _NativeAdLoaderState extends State<NativeAdLoader> {
 
   void _load() {
     if (widget.useCustomLayout) {
-      // Custom layout - prevents content cutting
       _ad = NativeAd(
         adUnitId: AdService.nativeId,
         factoryId: 'customAdFactory',
@@ -337,7 +460,6 @@ class _NativeAdLoaderState extends State<NativeAdLoader> {
         ),
       );
     } else {
-      // Template layout
       _ad = NativeAd(
         adUnitId: AdService.nativeId,
         request: const AdRequest(),
@@ -361,14 +483,24 @@ class _NativeAdLoaderState extends State<NativeAdLoader> {
 
   @override
   Widget build(BuildContext context) {
-    if (!loaded || _ad == null) return const SizedBox.shrink();
-
-    // Use provided height or default based on layout type
     final adHeight =
         widget.height ??
         (widget.useCustomLayout
             ? 250.0
             : (widget.type == TemplateType.medium ? 250.0 : 110.0));
+
+    if (!loaded || _ad == null) {
+      return ShimmerWidget(
+        child: Container(
+          height: adHeight,
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      );
+    }
 
     return SizedBox(
       height: adHeight,
@@ -398,10 +530,7 @@ class AppOpenAdManager {
   bool _isShowingAd = false;
   DateTime? _appOpenLoadTime;
 
-  /// Maximum duration allowed between loading and showing the ad
   final Duration maxCacheDuration = const Duration(hours: 4);
-
-  /// Minimum time app must be in background before showing ad again
   final Duration minBackgroundDuration = const Duration(seconds: 30);
   DateTime? _lastPauseTime;
 
@@ -418,7 +547,6 @@ class AppOpenAdManager {
     }
   }
 
-  /// Load an app open ad
   void loadAd() {
     if (_isPremium()) return;
 
@@ -438,12 +566,10 @@ class AppOpenAdManager {
     // );
   }
 
-  /// Track when app goes to background
   void onAppBackgrounded() {
     _lastPauseTime = DateTime.now();
   }
 
-  /// Whether an ad is available and not expired
   bool get isAdAvailable {
     if (_appOpenAd == null) return false;
     if (_appOpenLoadTime == null) return false;
@@ -453,7 +579,6 @@ class AppOpenAdManager {
     return duration < maxCacheDuration;
   }
 
-  /// Show the ad if available
   void showAdIfAvailable() {
     if (_isPremium()) return;
     if (_isShowingAd) {
@@ -461,7 +586,6 @@ class AppOpenAdManager {
       return;
     }
 
-    // Check if app was in background long enough
     if (_lastPauseTime != null) {
       final backgroundDuration = DateTime.now().difference(_lastPauseTime!);
       if (backgroundDuration < minBackgroundDuration) {
@@ -486,7 +610,7 @@ class AppOpenAdManager {
         _isShowingAd = false;
         ad.dispose();
         _appOpenAd = null;
-        loadAd(); // Preload next ad
+        loadAd();
       },
       onAdFailedToShowFullScreenContent: (ad, error) {
         print('❌ Failed to show app open ad: $error');

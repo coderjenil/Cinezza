@@ -115,11 +115,6 @@ class _SeeAllPageState extends State<SeeAllPage> {
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
-    final crossAxisCount = screenWidth > 900
-        ? 5
-        : screenWidth > 600
-        ? 4
-        : 3;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
@@ -179,8 +174,12 @@ class _SeeAllPageState extends State<SeeAllPage> {
                         padding: const EdgeInsets.all(16),
                         physics: const BouncingScrollPhysics(),
                         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: crossAxisCount,
-                          childAspectRatio: 0.65,
+                          crossAxisCount: _category?.isLandScape ?? false
+                              ? 2
+                              : 3,
+                          childAspectRatio: _category?.isLandScape ?? false
+                              ? 1.4
+                              : 0.65,
                           crossAxisSpacing: 10,
                           mainAxisSpacing: 14,
                         ),
@@ -197,6 +196,7 @@ class _SeeAllPageState extends State<SeeAllPage> {
 
                           final movie = _movies[index];
                           return MovieCard(
+                            isLandScape: _category?.isLandScape ?? false,
                             onTap: () {},
                             movie: movie,
 

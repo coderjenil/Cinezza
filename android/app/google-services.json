@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "680692630380",
+    "project_id": "djmx-8b4ee",
+    "storage_bucket": "djmx-8b4ee.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:680692630380:android:179ac7727f6e3d8760e949",
+        "android_client_info": {
+          "package_name": "djmixer.virtual.remixsong.remixsong"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZnnTtNQnOmkaZ7WZy2iRLQ-q3PUYIxJQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
