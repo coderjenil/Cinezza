@@ -202,4 +202,32 @@ class UserService {
       rethrow;
     } finally {}
   }
+
+  // Add this method to UserService class
+  static Future<void> refreshUserStatus() async {
+    try {
+      final deviceId = await DeviceHelper.getDeviceId();
+
+      http.Response response = await ApiCall.callService(
+        requestInfo: APIRequestInfoObj(
+          requestType: HTTPRequestType.get,
+          url: ApiEndPoints.updateUserByDevice + deviceId,
+          headers: ApiHeaders.getHeaders(),
+          serviceName: 'Refresh User Status',
+          timeSecond: 30,
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        SplashController splashController = Get.find<SplashController>();
+        splashController.userModel.value = userModelFromJson(response.body);
+        debugPrint(
+          '✅ User status refreshed - Premium: ${splashController.userModel.value?.user?.planActive}',
+        );
+      }
+    } catch (e) {
+      debugPrint('❌ Error refreshing user status: $e');
+    }
+  }
+
 }
