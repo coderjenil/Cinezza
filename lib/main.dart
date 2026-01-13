@@ -1,5 +1,9 @@
+import 'dart:ui';
+
 import 'package:cinezza/controllers/premium_controller.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -23,6 +27,15 @@ void main() async {
   await GetStorage.init();
   AppService.checkAppStatus();
   MobileAds.instance.initialize();
+
+  // Pass all uncaught "fatal" errors from the framework to Crashlytics
+  FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+  // Pass all uncaught asynchronous errors that aren't handled by the Flutter framework to Crashlytics
+  PlatformDispatcher.instance.onError = (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    return true;
+  };
 
   // Enable verbose logging for debugging (remove in production)
   OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
@@ -65,15 +78,21 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
-  
   final AppOpenAdManager _appOpenAdManager = AppOpenAdManager();
 
   @override
   void initState() {
     super.initState();
+
     WidgetsBinding.instance.addObserver(this);
     _appOpenAdManager.loadAd(); // Initial load
   }
+
+  // Create Analytics instance
+  static FirebaseAnalytics analytics = FirebaseAnalytics.instance;
+  static FirebaseAnalyticsObserver observer = FirebaseAnalyticsObserver(
+    analytics: analytics,
+  );
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
@@ -103,6 +122,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     return Obx(
       () => GetMaterialApp(
         title: 'Cinezza',
+        navigatorObservers: [observer],
         debugShowCheckedModeBanner: false,
         theme: AppThemes.lightTheme,
         darkTheme: AppThemes.darkTheme,

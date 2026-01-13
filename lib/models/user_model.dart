@@ -40,7 +40,6 @@ class User {
   DateTime lastActive;
   DateTime createdAt;
   DateTime updatedAt;
-  int v;
 
   User({
     required this.id,
@@ -54,7 +53,6 @@ class User {
     required this.lastActive,
     required this.createdAt,
     required this.updatedAt,
-    required this.v,
   });
 
   factory User.fromJson(Map<String, dynamic> json) => User(
@@ -69,7 +67,6 @@ class User {
     lastActive: DateTime.parse(json["last_active"]),
     createdAt: DateTime.parse(json["created_at"]),
     updatedAt: DateTime.parse(json["updated_at"]),
-    v: json["__v"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -84,6 +81,5 @@ class User {
     "last_active": lastActive.toIso8601String(),
     "created_at": createdAt.toIso8601String(),
     "updated_at": updatedAt.toIso8601String(),
-    "__v": v,
   };
 }

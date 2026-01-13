@@ -1,7 +1,8 @@
 class ApiEndPoints {
   // static const String baseURL = "http://192.168.1.85:3000/api/";
-
   static const String baseURL = "https://www.quizonline.live/api/";
+  // static const String baseURL =
+  //     "https://miguelina-unperusable-oralee.ngrok-free.dev/api/";
   static const String registerUser = "${baseURL}auth/login";
   static const String getAllCategories = "${baseURL}categories/";
   static const String getMoviesByCategory = "${baseURL}movies/category/";
@@ -13,6 +14,7 @@ class ApiEndPoints {
   static const String requestMovie = "${baseURL}request-movie";
   static const String increaseMovieViewCount = "${baseURL}movies/";
   static const String upgradePlan = "${baseURL}users/upgrade-plan";
+  static const String razorPayCreateOrder = "${baseURL}razorpay/create-order";
 }
 
 class ApiHeaders {

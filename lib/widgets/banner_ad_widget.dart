@@ -112,12 +112,17 @@ class _BannerAdWidgetState extends State<BannerAdWidget>
   Widget _buildBannerBox() {
     if (_bannerAd == null) return const SizedBox.shrink();
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
-      height: 60,
-      alignment: Alignment.center,
-      child: AdWidget(ad: _bannerAd!),
-    );
+    return Obx(() {
+      final controller = Get.find<SplashController>();
+      return controller.userModel.value?.user.planActive ?? false
+          ? SizedBox()
+          : Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+              height: 60,
+              alignment: Alignment.center,
+              child: AdWidget(ad: _bannerAd!),
+            );
+    });
   }
 
   Widget _buildLoadingShimmer() {

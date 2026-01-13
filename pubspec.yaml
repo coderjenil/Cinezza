@@ -41,6 +41,8 @@ dependencies:
   internet_connection_checker: ^1.0.0+1
   firebase_core: ^4.3.0
   onesignal_flutter: ^5.3.5
+  firebase_crashlytics: ^5.0.6
+  firebase_analytics: ^12.1.0
 
 dev_dependencies:
   flutter_test:

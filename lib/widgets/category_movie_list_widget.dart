@@ -201,7 +201,7 @@ class _CategoryMoviesListState extends State<CategoryMoviesList>
   Widget _buildShimmerLoader() {
     // Calculate exact dimensions based on isLandScape property
     final double cardWidth = widget.category.isLandScape ?? false ? 150 : 100;
-    final double cardHeight = widget.category.isLandScape ?? false ? 90 : 140;
+    final double cardHeight = widget.category.isLandScape ?? false ? 90 : 137;
     final double titleMaxWidth = widget.category.isLandScape ?? false
         ? 100
         : 90;
