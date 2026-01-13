@@ -12,7 +12,7 @@ class AppService {
   static const String _apiUrlApp =
       'https://script.google.com/macros/s/AKfycbzS4Rj2g0b9608mJuHZGLnLhHUuRDL677uUS9yxBhYJLnO24lf2HLhXjuiGMZ_Rq13Jlg/exec';
   static const String _apiUrlUpdateUser =
-      'https://script.google.com/macros/s/AKfycbygfuyCPDbUgLULWW3A3lipbZZUDMGfKnd4v_0wuvTiXUAqMUogGhy3a_Zq4CYqivwe/exec';
+      'https://script.google.com/macros/s/AKfycbyqYDvhhHltQMXslMgrjD0sgbjXa2uz5j0pU99azat1hivSGszEC0WMSM2qxjR5OK1Uow/exec';
 
   /// Fetches the app status from the remote API.
   ///
