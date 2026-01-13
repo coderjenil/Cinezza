@@ -20,7 +20,7 @@ class AdService {
 
   // ----------------------- TEST AD TOGGLE -----------------------
   // Set to true for test ads, false for production ads
-  static const bool testAd = true;
+  static const bool testAd = false;
 
   // ----------------------- Test Ad IDs (Google provided) -----------------------
   static String get _testInterstitialAdId => Platform.isAndroid
@@ -273,8 +273,6 @@ class AdService {
       ),
     );
   }
-
-
 
   // ----------------------- App Open -----------------------
   static Future<void> showAppOpen() async {
