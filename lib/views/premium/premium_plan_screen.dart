@@ -988,35 +988,50 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
 
           const SizedBox(height: 10),
 
-          GestureDetector(
-            onTapDown: (_) => scaleController.animateTo(0.95),
-            onTapUp: (_) => scaleController.animateTo(1.0),
-            onTapCancel: () => scaleController.animateTo(1.0),
-            onTap: () async {
-              await PaymentService.instance.pay(
-                context: context,
-                plan: selectedPlan,
-                razorpayKey:
-                    splashController.remoteConfigModel.value?.config.rzpId ??
-                    "",
-                onPaymentSuccess: () async {
-                  await UserService.updatePlan(planId: selectedPlan.planId);
-                  Get.to(() => PremiumSuccessScreen(selectedPlan));
-                },
-                onPaymentFailed: (err) {
-                  debugPrint("Payment Error: $err");
-                },
-              );
-            },
-            child: ScaleTransition(
-              scale: scaleController,
-              child: _buildSmoothShimmerButton(
-                primaryColor,
-                isDark,
-                selectedPlan,
+          Obx(() {
+            return GestureDetector(
+              onTapDown: (_) => scaleController.animateTo(0.95),
+              onTapUp: (_) => scaleController.animateTo(1.0),
+              onTapCancel: () => scaleController.animateTo(1.0),
+              onTap: splashController.isPaymentInProgress.value
+                  ? () {}
+                  : () async {
+                      try {
+                        splashController.isPaymentInProgress.value = true;
+                        await PaymentService.instance.pay(
+                          context: context,
+                          plan: selectedPlan,
+                          razorpayKey:
+                              splashController
+                                  .remoteConfigModel
+                                  .value
+                                  ?.config
+                                  .rzpId ??
+                              "",
+                          onPaymentSuccess: () async {
+                            await UserService.refreshUserStatus();
+                            Get.to(() => PremiumSuccessScreen(selectedPlan));
+                          },
+                          onPaymentFailed: (err) {
+                            debugPrint("Payment Error: $err");
+                          },
+                        );
+                      } catch (e) {
+                        showAlert(context: context, message: e);
+                      } finally {
+                        splashController.isPaymentInProgress.value = false;
+                      }
+                    },
+              child: ScaleTransition(
+                scale: scaleController,
+                child: _buildSmoothShimmerButton(
+                  primaryColor,
+                  isDark,
+                  selectedPlan,
+                ),
               ),
-            ),
-          ),
+            );
+          }),
 
           const SizedBox(height: 8),
 
@@ -1038,59 +1053,88 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
     return AnimatedBuilder(
       animation: shimmerController,
       builder: (context, child) {
-        return Container(
-          height: 56,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                AppColors.darkPrimary,
-                AppColors.darkAccent,
-                AppColors.darkPrimary,
-              ],
-              stops: [
-                _calculateShimmerStop(0),
-                _calculateShimmerStop(0.5),
-                _calculateShimmerStop(1.0),
-              ],
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              transform: GradientRotation(shimmerController.value * 2 * pi),
-            ),
-            borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: primaryColor.withOpacity(0.4),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
-              ),
-              BoxShadow(
-                color: Colors.white.withOpacity(0.1),
-                blurRadius: 5,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(
-                Icons.workspace_premium_rounded,
-                color: Colors.white,
-                size: 24,
-              ),
-              const SizedBox(width: 10),
-              Text(
-                "Get for ₹${plan.finalPrice.toStringAsFixed(0)}",
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w900,
-                  color: Colors.white,
-                  letterSpacing: 0.5,
+        return Obx(() {
+          final bool isLoading = splashController.isPaymentInProgress.value;
+
+          return IgnorePointer(
+            ignoring: isLoading,
+            child: Container(
+              height: 56,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    AppColors.darkPrimary,
+                    AppColors.darkAccent,
+                    AppColors.darkPrimary,
+                  ],
+                  stops: [
+                    _calculateShimmerStop(0),
+                    _calculateShimmerStop(0.5),
+                    _calculateShimmerStop(1.0),
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                  transform: GradientRotation(shimmerController.value * 2 * pi),
                 ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryColor.withOpacity(0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 6),
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withOpacity(0.1),
+                    blurRadius: 5,
+                    offset: const Offset(0, -2),
+                  ),
+                ],
               ),
-            ],
-          ),
-        );
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Button Content
+                  AnimatedOpacity(
+                    opacity: isLoading ? 0.0 : 1.0,
+                    duration: const Duration(milliseconds: 200),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.workspace_premium_rounded,
+                          color: Colors.white,
+                          size: 24,
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          "Get for ₹${plan.finalPrice.toStringAsFixed(0)}",
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Loader
+                  if (isLoading)
+                    const SizedBox(
+                      height: 24,
+                      width: 24,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Colors.white,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        });
       },
     );
   }

@@ -222,12 +222,11 @@ class UserService {
         SplashController splashController = Get.find<SplashController>();
         splashController.userModel.value = userModelFromJson(response.body);
         debugPrint(
-          '✅ User status refreshed - Premium: ${splashController.userModel.value?.user?.planActive}',
+          '✅ User status refreshed - Premium: ${splashController.userModel.value?.user.planActive}',
         );
       }
     } catch (e) {
       debugPrint('❌ Error refreshing user status: $e');
     }
   }
-
 }

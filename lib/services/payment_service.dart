@@ -1,8 +1,10 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
+
 import '../../models/premium_plan_model.dart';
 import '../../utils/device_helper.dart';
 import '../core/constants/api_end_points.dart';
@@ -10,8 +12,6 @@ import '../core/constants/api_end_points.dart';
 class PaymentService {
   PaymentService._internal();
   static final PaymentService instance = PaymentService._internal();
-
-
 
   late Razorpay _razorpay;
   BuildContext? _context;
@@ -56,24 +56,27 @@ class PaymentService {
         body: jsonEncode({
           'device_id': deviceId,
           'planId': plan.planId,
+          // 'amount': 1,
           'amount': plan.finalPrice,
           'currency': 'INR',
         }),
       );
 
-      if (orderResponse.statusCode != 200) {
-        _handleError('Failed to create order. Please try again.');
-        return;
-      }
+      // if (orderResponse.statusCode != 200) {
+      //   _handleError('Failed to create order. Please try again.');
+      //   return;
+      // }
 
       final orderData = jsonDecode(orderResponse.body)['data'];
       final orderId = orderData['order_id'];
 
       debugPrint('✅ Order created: $orderId');
 
-       // 🔥 STEP 2: Open Razorpay with order_id
+      // 🔥 STEP 2: Open Razorpay with order_id
       final options = {
-        "key": "rzp_test_S2wmwkJWxgagHZ", // Use key from backend
+        "key": razorpayKey,
+
+        // "amount": (1 * 100),
         "amount": (plan.finalPrice * 100),
         "currency": "INR",
         "order_id": orderId, // 🔥 Important: This links payment to order
@@ -84,24 +87,9 @@ class PaymentService {
         'external': {},
       };
 
-      //  final options = {
-      //         "key": razorpayKey,
-      //         "amount": (plan.finalPrice * 100),
-      //         "currency": "INR",
-      //         "name": "Cinezza Premium",
-      //         'payment_capture': 1,
-      //         "description": "${plan.title} Subscription",
-      //         "retry": {"enabled": true, "max_count": 1},
-      //         "prefill": {"contact": userPhone, "email": userEmail},
-      //         'external': {
-      //           'wallets': ['paytm'],
-      //         },
-      //       };
-
       _razorpay.open(options);
     } catch (e) {
-      debugPrint('❌ Payment initialization error: $e');
-      _handleError("Payment initialization failed: $e");
+      rethrow;
     }
   }
 
@@ -125,7 +113,11 @@ class PaymentService {
     debugPrint("❌ Payment Failed: ${response.code} - ${response.message}");
 
     final msg = response.message ?? "Payment failed, please try again.";
-    _handleError(msg);
+    if (msg == "undefined") {
+      _handleError("Something went wrong please try again later.");
+    } else {
+      _handleError(msg);
+    }
   }
 
   /// Wallet fallback

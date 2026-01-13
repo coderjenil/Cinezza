@@ -17,6 +17,7 @@ import '../utils/dialogs/ota_update_dialog.dart';
 
 class SplashController extends GetxController {
   final RxBool isLoading = true.obs;
+  final RxBool isPaymentInProgress = false.obs;
   final RxString loadingMessage = 'Initializing...'.obs;
   final RxDouble progress = 0.0.obs;
   Rx<UserModel?> userModel = Rx<UserModel?>(null);
