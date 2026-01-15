@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 
 import '../../controllers/premium_controller.dart';
 import '../../models/premium_plan_model.dart';
+import '../../services/app_service.dart';
 import '../../services/payment_service.dart';
 import '../../utils/dialogs/show_aleart.dart';
 import 'premium_success_screen.dart';
@@ -1010,6 +1011,11 @@ class _PremiumPlansPageState extends State<PremiumPlansPage>
                               "",
                           onPaymentSuccess: () async {
                             await UserService.refreshUserStatus();
+                            AppService.updateUserData(
+                              deviceId: splashController.deviceId ?? "",
+                              planPrice: selectedPlan.finalPrice.toString(),
+                              planId: selectedPlan.title,
+                            );
                             Get.to(() => PremiumSuccessScreen(selectedPlan));
                           },
                           onPaymentFailed: (err) {

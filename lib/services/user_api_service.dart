@@ -219,6 +219,7 @@ class UserService {
       );
 
       if (response.statusCode == 200) {
+        
         SplashController splashController = Get.find<SplashController>();
         splashController.userModel.value = userModelFromJson(response.body);
         debugPrint(
