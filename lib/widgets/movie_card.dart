@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 import '../models/movies_model.dart';
 import 'cached_image.dart';
-import '../core/theme/app_colors.dart';
+
 
 class MovieCard extends StatefulWidget {
   final Movie movie;

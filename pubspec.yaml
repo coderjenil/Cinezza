@@ -3,7 +3,7 @@ name: cinezza
 description: "A new Flutter project."
 publish_to: "none"
 
-version: 1.0.1+2
+version: 1.0.2+3
 
 environment:
   sdk: ^3.9.2
@@ -43,6 +43,8 @@ dependencies:
   onesignal_flutter: ^5.3.5
   firebase_crashlytics: ^5.0.6
   firebase_analytics: ^12.1.0
+  flutter_windowmanager_plus: ^1.0.1
+  
 
 dev_dependencies:
   flutter_test:

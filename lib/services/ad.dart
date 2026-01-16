@@ -141,7 +141,7 @@ class AdService {
     }
   }
 
-  // ----------------------- Interstitial with Back Button Prevention -----------------------
+  // ----------------------- Interstitial with Back Button Prevention ----------------------- 
   Future<void> _showInterstitial(
     BuildContext context,
     VoidCallback onComplete, {

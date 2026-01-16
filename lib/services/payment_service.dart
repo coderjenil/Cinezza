@@ -56,8 +56,8 @@ class PaymentService {
         body: jsonEncode({
           'device_id': deviceId,
           'planId': plan.planId,
-          'amount': 1,
-          // 'amount': plan.finalPrice,
+          // 'amount': 1,
+          'amount': plan.finalPrice,
           'currency': 'INR',
         }),
       );
@@ -76,8 +76,8 @@ class PaymentService {
       final options = {
         "key": razorpayKey,
 
-        "amount": (1 * 100),
-        // "amount": (plan.finalPrice * 100),
+        // "amount": (1 * 100),
+        "amount": (plan.finalPrice * 100),
         "currency": "INR",
         "order_id": orderId, // 🔥 Important: This links payment to order
         "name": "Cinezza Premium",
